@@ -1,4 +1,5 @@
-#Ground DB
+Ground DB
+=========
 GroundDB is a thin layer providing Meteor offline database and methods
 
 ##Creating a GroundDB object
@@ -7,6 +8,7 @@ GroundDB is a thin layer providing Meteor offline database and methods
 ```
 
 ##Meteor Collection Interface
+GroundDB works like a normal Meteor.Collection
 * `.find`
 * `.findOne`
 * `.insert`
