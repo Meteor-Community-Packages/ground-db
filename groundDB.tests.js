@@ -5,9 +5,7 @@ function equals(a, b) {
 }
 
 Tinytest.add('GroundDB test queryString', function(test) {
-  test.isTrue(typeof GroundDB === 'function', 'GroundDB not a function?');
-  test.isTrue(typeof _storage === 'function', '_storage not a function?');
-  test.equal(packageScope, 'ok', 'Cant reach package scope');
+
 });
 
 

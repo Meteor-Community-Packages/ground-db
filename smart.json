@@ -1,0 +1,10 @@
+{
+  "name": "GroundDB",
+  "description": "GroundDB is a thin layer providing Meteor offline database and methods",
+  "homepage": "https://github.com/raix/Meteor-GroundDB",
+  "author": "Morten Henriksen  (http://gi-software.com)",
+  "version": "0.0.1",
+  "git": "https://github.com/raix/Meteor-GroundDB.git",
+  "packages": {
+  }
+}
