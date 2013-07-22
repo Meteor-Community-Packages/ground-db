@@ -1,4 +1,4 @@
 // @export GroundDB
 GroundDB = function(name, options) {
-  return new Meteor.Collection(name);
+  return new Meteor.Collection(name, options);
 };
