@@ -1,4 +1,7 @@
 // @export GroundDB
 GroundDB = function(name, options) {
-  return new Meteor.Collection(name, options);
+  // Inheritance Meteor Collection can be set by options.collection
+  return (options && options.collection &&
+          options.collection instanceof Meteor.Collection) ?
+          options.collection : new Meteor.Collection(name, options);
 };

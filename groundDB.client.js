@@ -25,7 +25,7 @@ Regz. RaiX
 
 // This can be customized by user by setting options.conflictHandler
 // this -> referes to collection
-_defaultConflictHandler = function(clientDoc, serverDoc) {
+var _defaultConflictHandler = function(clientDoc, serverDoc) {
   // Strategy: Server allways wins
 
   // If document is found on client
@@ -43,7 +43,7 @@ _defaultConflictHandler = function(clientDoc, serverDoc) {
 
 // Returns the localstorage if its found and working
 // TODO: check if this works in IE
-_storage = function() {
+var _storage = function() {
   var storage,
       fail,
       uid;
@@ -61,10 +61,10 @@ _storage = function() {
 };
 
 // get our storage if found
-storage = _storage();
+var storage = _storage();
 
 // save object into localstorage
-_saveObject = function(name, object) {
+var _saveObject = function(name, object) {
   if (storage) {
     var cachedDoc = EJSON.stringify(object);
     storage.setItem('groundDB.' + name, cachedDoc);
@@ -72,7 +72,7 @@ _saveObject = function(name, object) {
 };
 
 // get object from localstorage, retur null if not found
-_loadObject = function(name, object) {
+var _loadObject = function(name, object) {
   if (storage) {
     var cachedDoc = storage.getItem('groundDB.' + name);
     if (cachedDoc && cachedDoc.length > 0) {
@@ -87,8 +87,10 @@ _loadObject = function(name, object) {
 
 // @export GroundDB
 GroundDB = function(name, options) {
-  // Inheritance Meteor Collection
-  var self = new Meteor.Collection(name, options);
+  // Inheritance Meteor Collection can be set by options.collection
+  var self = (options && options.collection &&
+          options.collection instanceof Meteor.Collection) ?
+          options.collection : new Meteor.Collection(name, options);
 
   // Rig conflictHandler
   self.conflictHandler =
@@ -152,26 +154,33 @@ GroundDB = function(name, options) {
   };
   ///////// EO mongo-livedata/collection.js 153
 
-  // Load the localstorage into list
+  self._databaseLoaded = false;
 
-  /*
-  Bulk Load database from local to memory
-  */
+  // Bulk Load database from local to memory
   self._loadDatabase = function() {
     // Then load the docs into minimongo
-    var docs = _loadObject('db.' + self.name);
+    if (!_methodsLoaded) {
+      console.log('Wrong order ' + self._name);
+    } else {
+      console.log('methods are loaded ' + self._name);
+    }
+    var docs = _loadObject('db.' + self._name);
     self._collection.docs = (docs) ? docs : {};
+
+    self._databaseLoaded = true;
   };
 
-  /*
-  Bulk Save database from memory to local
-  */
+  // Bulk Save database from memory to local
   self._saveDatabase = function() {
-    _saveObject('db.' + self.name, self._collection.docs);
+    if (self._databaseLoaded) {
+      _saveObject('db.' + self._name, self._collection.docs);
+    }
   };
 
   // Init docs from localstorage
-  self._loadDatabase();
+  _onMethodsLoad(function() {
+    self._loadDatabase();
+  });
 
   // Add window listener for saving db locally (untrusted)
   window.addEventListener('unload', function(e) {
@@ -183,24 +192,15 @@ GroundDB = function(name, options) {
     // Add interval save
     Meteor.setInterval(function() {
       self._saveDatabase();
-
-      // TODO: should we still leave out saving methods?
-      _saveMethods();
     }, options.saveInterval);
   }
 
-  // Optional save data at any changes
-  if (options && options.saveLive === true) {
-    // Add autorun save
-    Deps.autorun(function() {
-      // Save on changes
-      self.find().fetch();
-      self._saveDatabase();
-
-      // Guess will save the methods too
-      _saveMethods();
-    });
-  }
+  // Add autorun save
+  Deps.autorun(function() {
+    // Save on changes
+    self.find().fetch();
+    self._saveDatabase();
+  });
 
   return self;
 };
@@ -208,71 +208,132 @@ GroundDB = function(name, options) {
 
 ///////////////////////////// RESUME METHODS ///////////////////////////////////
 
-  /*
-  load methods from localstorage and resume the methods
-  */
-  _loadMethods = function() {
-    // set last session id
-    if (storage) {
-      var lastSession = storage.getItem('groundDB.lastSession');
-      if (lastSession) {
-        Meteor.default_connection._lastSessionId = lastSession;
-      }
+// Have methods been initialized?
+var _methodsLoaded = false;
+
+// Array of listeners
+var _onMethodsLoadListeners = [];
+
+// Run func when methods are loaded
+var _onMethodsLoad = function(func) {
+  if (_methodsLoaded) {
+    func();
+  } else {
+    _onMethodsLoadListeners.push(func);
+  }
+};
+
+// Trigger / dispatch methods loaded event
+var _callMethodsLoadListeners = function() {
+  if (!_methodsLoaded) {
+    console.log('methods are loaded!!');
+    _methodsLoaded = true;
+    while (_onMethodsLoadListeners.length > 0) {
+      // FIFO
+      _onMethodsLoadListeners.shift().apply(this);
     }
+  }
+};
 
-    // Load methods from local
-    var methods = _loadObject('methods');
+///////////////////////////// LOAD & SAVE METHODS //////////////////////////////
 
-    // If any methods outstanding
-    if (methods) {
+// load methods from localstorage and resume the methods
+var _loadMethods = function() {
+  // set last session
+  var settings = _loadObject('settings');
 
-      // Iterate over array of methods
-      _.each(methods, function(method) {
+  if (settings) {
+    Meteor.default_connection._lastSessionId = settings._lastSessionId;
+  }
 
-        // Add method to connection
-        Meteor.default_connection.apply(
-                method.method, method.args, method.options);
-      });
-    }
-  };
+  // Load methods from local
+  var methods = _loadObject('methods');
 
-  /*
-  Save the methods into the localstorage
-  */
-  _saveMethods = function() {
-    // Save last session id
-    if (storage) {
-      storage.setItem('groundDB.lastSession', Meteor.default_connection._lastSessionId);
-    }
+  // If any methods outstanding
+  if (methods) {
 
-    // Array of outstanding methods
-    var methods = [];
+    // Iterate over array of methods
+    _.each(methods, function(method) {
 
-    // Test if we got any outstanding methods at the moment
-    if (Meteor.default_connection._outstandingMethodBlocks &&
-            Meteor.default_connection._outstandingMethodBlocks.length > 0) {
+      // Add method to connection
+      Meteor.default_connection.apply(
+              method.method, method.args, method.options);
+    });
+  }
 
-      // Convert the data into nice array
-      _.each(Meteor.default_connection._outstandingMethodBlocks[0].methods,
-              function(method) {
+  // Dispatch methods loaded event
+  _callMethodsLoadListeners();
+};
 
-        // Format the data
-        methods.push({
-          method: method._message.method,
-          args: method._message.params,
-          options: { wait: method._wait }
-        });
-      });
-    }
-
-    // Save outstanding methods to localstorage
-    _saveObject('methods', methods);
-  };
-
-    // Add window listener for saving methods locally (untrusted)
-  window.addEventListener('unload', function(e) {
-    _saveMethods();
+// Save the methods into the localstorage
+var _saveMethods = function() {
+  // Save last session
+  _saveObject('settings', {
+    _lastSessionId: Meteor.default_connection._lastSessionId
   });
 
-  // Init resume
+  // Array of outstanding methods
+  var methods = [];
+
+  // Convert the data into nice array
+  _.each(Meteor.default_connection._methodInvokers,
+          function(method) {
+    if (method._message.method === 'login') {
+      // We could attach _loadMethods to the login event, this way the
+      // login that way methods will block until user is logged in?
+      console.log('call ' + method._message.method);
+    } else {
+      // Dont cache login calls - they are spawned pr. default when accounts
+      // are installed
+      methods.push({
+        // Format the data
+        method: method._message.method,
+        args: method._message.params,
+        options: { wait: method._wait }
+      });
+      console.log('call ' + method._message.method);
+    }
+  });
+
+  if (methods.length === 0) {
+    console.log('No methods pending');
+  } else {
+    console.log('GOT methods');
+
+  }
+  // Save outstanding methods to localstorage
+  _saveObject('methods', methods);
+};
+
+// Overridde Meteor.default_connection
+// apply and _outstandingMethodFinished
+Meteor.default_connection = new function() {
+  self = Meteor.default_connection;
+  var _applySuper = self.apply;
+  self.apply = function(/* arguments */) {
+    // Call super
+    _applySuper.apply(self, arguments);
+    // Save methods
+    _onMethodsLoad(function() {
+      _saveMethods();
+    });
+  };
+
+  self._outstandingMethodFinishedSuper = self._outstandingMethodFinished;
+  self._outstandingMethodFinished = function() {
+    // Call super
+    self._outstandingMethodFinishedSuper();
+    // We save current status of methods
+    _onMethodsLoad(function() {
+      _saveMethods();
+    });
+  };
+
+  return self;
+};
+
+// Init resume, wait a sec for login method to be initialized
+// TODO: Investigate other options eg. only run in timeout if Accounts exists
+Meteor.setTimeout(function() {
   _loadMethods();
+}, 0);
