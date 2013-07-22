@@ -87,18 +87,8 @@ _loadObject = function(name, object) {
 
 // @export GroundDB
 GroundDB = function(name, options) {
-	var self = this;
-
-  // name shoulc be string and not empty / ''
-  if (name !== ''+name || name.length === 0) {
-    throw new Error('GroundDB expects a string as name');
-  }
-
-  // Set collection name
-  self.name = name;
-
-  // Init the collection
-  self.collection = new Meteor.Collection(name);
+  // Inheritance Meteor Collection
+  var self = new Meteor.Collection(name, options);
 
   // Rig conflictHandler
   self.conflictHandler =
@@ -109,9 +99,9 @@ GroundDB = function(name, options) {
   // Documents allready in the docs. So we handle the conflict instead...
   // TODO: Could this be cleaned up?
   ////////// BEGIN mongo-livedata/collection.js 103
-  self.collection._connection._stores[name].update = function (msg) {
+  self._connection._stores[name].update = function (msg) {
     var mongoId = Meteor.idParse(msg.id);
-    var doc = self.collection._collection.findOne(mongoId);
+    var doc = self._collection.findOne(mongoId);
 
     // Is this a "replace the whole doc" message coming from the quiescence
     // of method writes to an object? (Note that 'undefined' is a valid
@@ -120,23 +110,23 @@ GroundDB = function(name, options) {
       var replace = msg.replace;
       if (!replace) {
         if (doc)
-          self.collection._collection.remove(mongoId);
+          self._collection.remove(mongoId);
       } else if (!doc) {
-        self.collection._collection.insert(replace);
+        self._collection.insert(replace);
       } else {
         // XXX check that replace has no $ ops
-        self.collection._collection.update(mongoId, replace);
+        self._collection.update(mongoId, replace);
       }
       return;
     } else if (msg.msg === 'added') {
       // Run conflict handler
-      self.conflictHandler.call(self.collection._collection,
+      self.conflictHandler.call(self._collection,
               doc, _.extend({_id: mongoId}, msg.fields));
 
     } else if (msg.msg === 'removed') {
       if (!doc)
         throw new Error("Expected to find a document already present for removed");
-      self.collection._collection.remove(mongoId);
+      self._collection.remove(mongoId);
     } else if (msg.msg === 'changed') {
       if (!doc)
         throw new Error("Expected to find a document to change");
@@ -153,7 +143,7 @@ GroundDB = function(name, options) {
             modifier.$set[key] = value;
           }
         });
-        self.collection._collection.update(mongoId, modifier);
+        self._collection.update(mongoId, modifier);
       }
     } else {
       throw new Error("I don't know how to deal with this message");
@@ -170,52 +160,22 @@ GroundDB = function(name, options) {
   self._loadDatabase = function() {
     // Then load the docs into minimongo
     var docs = _loadObject('db.' + self.name);
-    self.collection._collection.docs = (docs) ? docs : {};
+    self._collection.docs = (docs) ? docs : {};
   };
 
   /*
   Bulk Save database from memory to local
   */
   self._saveDatabase = function() {
-    _saveObject('db.' + self.name, self.collection._collection.docs);
-  };
-
-  // Map collection api
-  self.find = function() {
-    return self.collection.find.apply(self.collection, arguments);
-  };
-
-  self.findOne = function() {
-    return self.collection.findOne.apply(self.collection, arguments);
-  };
-
-  self.remove = function() {
-    return self.collection.remove.apply(self.collection, arguments);
-  };
-
-  self.insert = function() {
-    return self.collection.insert.apply(self.collection, arguments);
-  };
-
-  self.update = function() {
-    return self.collection.update.apply(self.collection, arguments);
-  };
-
-  self.allow = function() {
-    return self.collection.allow.apply(self.collection, arguments);
-  };
-
-  self.deny = function() {
-    return self.collection.deny.apply(self.collection, arguments);
+    _saveObject('db.' + self.name, self._collection.docs);
   };
 
   // Init docs from localstorage
   self._loadDatabase();
 
-  // Add window listener for saving db locally
+  // Add window listener for saving db locally (untrusted)
   window.addEventListener('unload', function(e) {
     self._saveDatabase();
-
   });
 
   // Optional save data to local at interval
@@ -234,7 +194,7 @@ GroundDB = function(name, options) {
     // Add autorun save
     Deps.autorun(function() {
       // Save on changes
-      self.collection.find().fetch();
+      self.find().fetch();
       self._saveDatabase();
 
       // Guess will save the methods too
@@ -309,7 +269,7 @@ GroundDB = function(name, options) {
     _saveObject('methods', methods);
   };
 
-    // Add window listener for saving methods locally
+    // Add window listener for saving methods locally (untrusted)
   window.addEventListener('unload', function(e) {
     _saveMethods();
   });
