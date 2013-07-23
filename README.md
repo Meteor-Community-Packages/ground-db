@@ -1,54 +1,48 @@
 Ground DB
 =========
-GroundDB is a thin layer providing Meteor offline database and methods
+GroundDB is a fast and thin layer providing Meteor offline database and methods
 
 ##Creating a GroundDB object
 ```js
   var list = new GroundDB('list');
 ```
 
+##Support
+Tested on Chrome, Safari, Firefox - but all browsers that support localstorage *contains a FF safe test of localstorage*
+If localstorage is not supported the groundDB would simply work as a normal `Meteor.Collection`
+
 ##Meteor Collection Interface
-GroundDB works like a normal Meteor.Collection
-* `.find`
-* `.findOne`
-* `.insert`
-* `.remove`
-* `.update`
-* `.allow`
-* `deny`
+GroundDB is like a normal Meteor.Collection - but changes and outstanding methods are cached and resumed.
 
 ##Concept
 Localstorage is simple and widely supported - but slow
 
-GroundDB saves pr. default outstanding methods and minimongo db into localstorage at window unload event, but can be configured to save at any changes and at certain interval(ms)
+GroundDB saves outstanding methods and minimongo db into localstorage - The number of saves is minimized. *It's less than a save pr. change*
 
 When the app loads GroundDB resumes methods and database changes - made when offline and browser closed.
 
 ##Options
+It's possible to mount an allready existing collection on a `groundDB` eg.:
 ```js
-var list = new GroundDB('list', {
-  saveInterval: 5000, // save pr. 5 sec
-  saveLive: true // save at any data change in subscribed collection
-  conflictHandler: function(clientDocument, serverDocument)
-});
+  Meteor.users = new GroundDB('users', {
+    collection: Meteor.users
+  });
 ```
+*The example will keep `Meteor.user()` returning correct user details*
 
-##Conflict Handler
-Heres the default conflict handler, the strategy is to let the server document allways win.
-```
-_defaultConflictHandler = function(clientDoc, serverDoc) {
-  // Strategy: Server allways wins
+##Security
+GroundDB works just like a normal `Meteor.Collection` why `allow` and `deny` still works.
 
-  // If document is found on client
-  if (clientDoc) {
-    // Then remove
-    this.remove(clientDoc._id);
-  }
-  // And insert the server document
-  this.insert(serverDoc);
-};
-```
-*If one wants the newest to win - then have a time diff between the server and client for calculating a server timestamp. When inserting new documents on the client use the diff to calculate the server timestamp. The conflict handler can then go and compare server time stamps and let the newest win*
+##Resume of outstanding methods
+Database changes and methods will be sent to the server just like normal. The methods are sent to server after relogin - this way `this.userId` isset when running on the server. In other words: `Just like normal`
 
-##Possible issue not tested
-* I havent tested how accounts fit in - I guess if user is not logged in when methods and changes resume - might get "Access denied"?
+##Future
+* If user logsin in multiple tabs the localstorage cache would only contain one of the tabs - actually the last edited. To solve the issue a webworker could keep record of the clients. *There is a comment last in client.js for further guidance. And link to code in the test repo `sharedConnection`*
+* At the moment the conflict resolution is pretty basic last change recieved by server wins. This could be greatly improved by adding a proper conflict handler. *For more details look at comment in server.js*
+* Havent tested it on IE
+
+##Contributions
+Feel free to send issues, pull requests all is wellcome
+
+Kind regards Morten
+
