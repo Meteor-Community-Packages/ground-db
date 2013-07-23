@@ -17,8 +17,15 @@ Regz. RaiX
 
 ////////////////////////////// LOCALSTORAGE ////////////////////////////////////
 
+// Well, I'm still using console.log
+window.console = (window && window.console && window.console.log)?
+        window.console: {
+  log: function() {}
+};
+
 // Returns the localstorage if its found and working
 // TODO: check if this works in IE
+// could use Meteor._localStorage - just needs a rewrite
 var _storage = function() {
   var storage,
       fail,

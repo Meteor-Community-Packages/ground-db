@@ -8,7 +8,8 @@ Package.describe({
 
 Package.on_use(function (api, where) {
   "use strict";
-  api.use(['random', 'ejson']);
+  api.use(['random', 'ejson'], 'client');
+  //api.use(['localstorage', 'ejson'], 'client');
   api.add_files('groundDB.client.js', 'client');
   api.add_files('groundDB.server.js', 'server');
 });
