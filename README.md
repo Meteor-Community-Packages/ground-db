@@ -7,6 +7,8 @@ GroundDB is a fast and thin layer providing Meteor offline database and methods
   var list = new GroundDB('list');
 ```
 
+[Live basic test](http://grounddb.meteor.com/)
+
 ##Support
 Tested on Chrome, Safari, Firefox - but all browsers that support localstorage *contains a FF safe test of localstorage*
 If localstorage is not supported the groundDB would simply work as a normal `Meteor.Collection`
