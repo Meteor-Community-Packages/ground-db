@@ -13,7 +13,8 @@ GroundDB is a fast and thin layer providing Meteor offline database and methods 
 
   or
 
-  // just ground the database
+  var list = new Meteor.Collection('list');
+  // just ground the database:
   GroundDB(list);
 ```
 *Example of different patterns*
@@ -22,14 +23,15 @@ GroundDB is a fast and thin layer providing Meteor offline database and methods 
 
 ##Features:
 * Ligth footprint
-* Broad browser support Chrome, Safari, Firefox
+* Broad browser support Chrome, Safari, Firefox and IE9
 * Fallback to normal Meteor.Collection
 * Resume of changes in collections
 * Resume of methods
 * Works offline cross window tabs
 
 ##Support
-Tested on Chrome, Safari, Firefox and IE9 *(though appcache is not supported tabs are updated when offline)* - but all browsers that support localstorage *contains a FF safe test of localstorage*
+Tested on Chrome, Safari, Firefox and IE9 *(though appcache is not supported in IE9 tabs are updated when offline)* - but all browsers that support localstorage *contains a FF safe test of localstorage*
+
 If localstorage is not supported the groundDB simply work as a normal `Meteor.Collection`
 
 ##Meteor Collection Interface
