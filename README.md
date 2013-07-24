@@ -4,15 +4,19 @@ GroundDB is a fast and thin layer providing Meteor offline database and methods 
 
 ##Creating a GroundDB object
 ```js
+
+  // Return a grounded Meteor.Collection
   var list = new GroundDB('list');
 
   or
 
+  // Get the groundDB of existing Meteor.Collection
   var list = new Meteor.Collection('list');
   var groundList = new GroundDB(list);
 
   or
 
+  // Ground an existing Meteor.Collection  
   var list = new Meteor.Collection('list');
   // just ground the database:
   GroundDB(list);
@@ -23,8 +27,8 @@ GroundDB is a fast and thin layer providing Meteor offline database and methods 
 
 ##Features:
 * Ligth footprint
-* Broad browser support Chrome, Safari, Firefox and IE9
-* Fallback to normal Meteor.Collection
+* Broad browser support Chrome, Safari, Firefox and Internet Explorer 9
+* Fallback to normal Meteor.Collection if no localstorage
 * Resume of changes in collections
 * Resume of methods
 * Works offline cross window tabs
@@ -38,7 +42,7 @@ If localstorage is not supported the groundDB simply work as a normal `Meteor.Co
 GroundDB is like a normal Meteor.Collection - but changes and outstanding methods are cached and resumed.
 
 ##Concept
-Localstorage is simple and widely supported - but slow
+Localstorage is simple and widely supported - but slow - *Thats why we only use it for caching databases and methods + trying to limit the read and writes from it.*
 
 GroundDB saves outstanding methods and minimongo db into localstorage - The number of saves is minimized. *It's less than a save pr. change*
 
