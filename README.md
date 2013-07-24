@@ -5,7 +5,18 @@ GroundDB is a fast and thin layer providing Meteor offline database and methods
 ##Creating a GroundDB object
 ```js
   var list = new GroundDB('list');
+
+  or
+
+  var list = new Meteor.Collection('list');
+  var groundList = new GroundDB(list);
+
+  or
+
+  // just ground the database
+  GroundDB(list);
 ```
+*Example of different patterns*
 
 [Live basic test](http://grounddb.meteor.com/)
 
@@ -31,12 +42,10 @@ GroundDB saves outstanding methods and minimongo db into localstorage - The numb
 
 When the app loads GroundDB resumes methods and database changes - made when offline and browser closed.
 
-##Options
+##Ground user details
 It's possible to mount an allready existing collection on a `groundDB` eg.:
 ```js
-  Meteor.users = new GroundDB('users', {
-    collection: Meteor.users
-  });
+  Meteor.users = new GroundDB(Meteor.users);
 ```
 *The example will keep `Meteor.user()` returning correct user details - Supports smartCollections by this option too*
 

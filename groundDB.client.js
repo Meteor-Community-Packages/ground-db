@@ -89,32 +89,33 @@ GroundDB = function(name, options) {
   // Inheritance Meteor Collection can be set by options.collection
   // Accepts smart collections by Arunoda Susiripala
   var self;
-  if (options && options.collection) {
+  // If name is string or null then assume a normal Meteor.Collection
+  if (name === ''+name || name === null || typeof name === 'undefined') {
+    // We instanciate a new meteor collection, let it handle undefined
+    self = new Meteor.Collection(name, options);
+  } else {
     // User set a collection in options
-    if (options.collection instanceof Meteor.Collection) {
-      self = options.collection;
+    if (name instanceof Meteor.Collection) {
+      self = name;
     } else {
-      if ((options.collection._remoteCollection instanceof Meteor.Collection)) {
+      if (name._remoteCollection instanceof Meteor.Collection) {
         // We are in a smart collection
-        self = options.collection._remoteCollection;
+        self = name._remoteCollection;
       } else {
         // self not set, throw an error
-        throw new Error('GroundDB got an invalid option: collection');
+        throw new Error('GroundDB got an invalid name or collection');
       }
     }
-  } else {
-    // We instanciate a new meteor collection
-    self = new Meteor.Collection(name, options);
   }
 
   // Add to pointer register
-  _groundDatabases[name] = self;
+  _groundDatabases[ self._name ] = self;
 
   // We have to overwrite the standard Meteor code - It throws an Error when
   // Documents allready in the docs. So we handle the conflict instead...
   // TODO: Could this be cleaned up?
   ////////// BEGIN mongo-livedata/collection.js 103
-  self._connection._stores[name].update = function (msg) {
+  self._connection._stores[ self._name ].update = function (msg) {
     var mongoId = Meteor.idParse(msg.id);
     var doc = self._collection.findOne(mongoId);
     // Is this a "replace the whole doc" message coming from the quiescence
