@@ -23,6 +23,9 @@ window.console = (window && window.console && window.console.log)?
   log: function() {}
 };
 
+// Status of app reload
+var _isReloading = false;
+
 // Returns the localstorage if its found and working
 // TODO: check if this works in IE
 // could use Meteor._localStorage - just needs a rewrite
@@ -46,18 +49,19 @@ var _storage = function() {
 // get our storage if found
 var storage = _storage();
 
+var _prefixGroundDB = 'groundDB.';
+
 // Add a correct prefix for groundDB
 var _getGroundDBPrefix = function(suffix) {
-  var prefix = 'groundDB.';
   // Should we support multiple users on multiple tabs namespacing data
   // in localstorage by current userId?
   //return prefix + ((Meteor.userId())?Meteor.userId()+'.':'') + suffix;
-  return prefix + suffix;
+  return _prefixGroundDB + suffix;
 };
 
 // save object into localstorage
 var _saveObject = function(name, object) {
-  if (storage) {
+  if (storage && _isReloading === false) {
     var cachedDoc = EJSON.stringify(object);
     storage.setItem(_getGroundDBPrefix(name), cachedDoc);
   }
@@ -67,7 +71,7 @@ var _saveObject = function(name, object) {
 var _loadObject = function(name) {
   if (storage) {
     var cachedDoc = storage.getItem(_getGroundDBPrefix(name));
-    if (cachedDoc && cachedDoc.length > 0) {
+    if (cachedDoc && cachedDoc.length > 0 && cachedDoc !== 'undefined') {
       var cachedDocObject = EJSON.parse(cachedDoc);
       return cachedDocObject;
     }
@@ -220,13 +224,67 @@ GroundDB = function(name, options) {
 
 ///////////////////////////// RESUME METHODS ///////////////////////////////////
 
-// Have methods been initialized?
+// Is methods resumed?
 var _methodsResumed = false;
+
+// Get a nice array of current methods
+var _getMethodsList = function() {
+  // Array of outstanding methods
+  var methods = [];
+
+  // Convert the data into nice array
+  _.each(Meteor.default_connection._methodInvokers, function(method) {
+    if (method._message.method !== 'login') {
+      // Dont cache login calls - they are spawned pr. default when accounts
+      // are installed
+      methods.push({
+        // Format the data
+        method: method._message.method,
+        args: method._message.params,
+        options: { wait: method._wait }
+      });
+      console.log('call ' + method._message.method);
+    }
+  });
+
+  return methods;
+};
+
+// Extract only newly added methods from localstorage
+var _getMethodUpdates = function(newMethods) {
+  var result = [];
+  // Get the old methods allready in memory
+  // We could have done an optimized slice version or just starting at
+  // oldMethods.length, but this tab is not in focus
+  var oldMethods = _getMethodsList();
+  // Iterate over the new methods, old ones should be ordered in beginning of
+  // newMethods we do a simple test an throw an error if thats not the case
+  for (var i=0; i < newMethods.length; i++) {
+
+    if (i < oldMethods.length) {
+      // Do a hard slow test to make sure all is in sync
+      if (EJSON.stringify(oldMethods[i]) !== EJSON.stringify(newMethods[i])) {
+          // The client data is corrupted, throw error or force the client to
+          // reload, does not make sense to continue?
+          window.location.reload();
+      }
+    } else {
+      // Ok out of oldMethods this is a new method call
+      result.push(newMethods[i]);
+    }
+  }
+
+  // return the result
+  return result;
+};
 
 // load methods from localstorage and resume the methods
 var _loadMethods = function() {
   // Load methods from local
   var methods = _loadObject('methods');
+
+  // We are only going to submit the diff
+  methods = _getMethodUpdates(methods);
 
   // If any methods outstanding
   if (methods) {
@@ -252,13 +310,12 @@ var _loadMethods = function() {
 
           if (doc) {
             // document found
-            // This is a problem for insert stub simulation, it would fail
-            // so we remove the document from client and let the method call
-            // reinsert in simulation
+            // This is a problem: insert stub simulation, would fail so we
+            // remove the added document from client and let the method call
+            // re-insert it in simulation
             if (command === 'insert') {
               // Remove the item from ground database so it can be correctly
               // inserted
-              console.log('remove before insert call: ' + mongoId);
               _groundDatabases[collection]._collection.remove(mongoId);
             } // EO handle insert
           } // EO Else no doc found in client database
@@ -266,7 +323,6 @@ var _loadMethods = function() {
       } // EO collection work
 
       // Add method to connection
-      console.log('apply method');
       Meteor.default_connection.apply(
               method.method, method.args, method.options);
     } // EO while methods
@@ -277,32 +333,18 @@ var _loadMethods = function() {
   console.log('Resumed outstanding methods');
 }; // EO load methods
 
+
 // Save the methods into the localstorage
 var _saveMethods = function() {
   if (_methodsResumed) {
     console.log('Store outstanding methods');
-    // Array of outstanding methods
-    var methods = [];
-
-    // Convert the data into nice array
-    _.each(Meteor.default_connection._methodInvokers, function(method) {
-      if (method._message.method !== 'login') {
-        // Dont cache login calls - they are spawned pr. default when accounts
-        // are installed
-        methods.push({
-          // Format the data
-          method: method._message.method,
-          args: method._message.params,
-          options: { wait: method._wait }
-        });
-        console.log('call ' + method._message.method);
-      }
-    });
 
     // Save outstanding methods to localstorage
-    _saveObject('methods', methods);
+    _saveObject('methods', _getMethodsList());
   }
 };
+
+/////////////////////// ADD TRIGGERS IN LIVEDATACONNECTION /////////////////////
 
 // Modify _LivedataConnection, well just minor
 _.extend(Meteor._LivedataConnection.prototype, {
@@ -329,17 +371,45 @@ _.extend(Meteor._LivedataConnection.prototype, {
   }
 });
 
+//////////////////////////// STARTUP METHODS RESUME ////////////////////////////
 Meteor.startup(function() {
   // Wait some not to conflict with accouts login
   // TODO: Do we have a better way, instead of depending on time should depend
   // on en event.
-  Meteor.setTimeout(function() { _loadMethods(); }, 500);
+  Meteor.setTimeout(function() {
+    _loadMethods();
+  }, 500);
 });
 
-// TODO: add support for muliple tabs
-// Is this hard?
-// No, simple theory: keep all the minimongo databases in sync + have a register
-// for storing remote methods - but only if its the same user id
-//
-// Note: Shared webworker for syncronizing tabs: (inspiration)
-// https://github.com/raix/Meteor-SharedConnection/blob/master/sharedSession.js#L53
+/////////////////////// LOAD CHANGES FROM OTHER TABS ///////////////////////////
+var _reloadTimeoutId = null;
+
+// Add support for multiple tabs
+window.addEventListener('storage', function(e) {
+  // Data changed in another tab, it would have updated localstorage, I'm
+  // outdated so reload the tab and localstorage - but we test the prefix on the
+  // key - since we actually make writes in the localstorage feature test
+  var prefixRegExp = new RegExp('^'+_prefixGroundDB+'method');
+  // Make sure its a prefixed change
+  if (prefixRegExp.test(e.key)) {
+    console.log(e.key);
+    // We are going to into reload, stop all access to localstorage
+    _isReloading = true;
+    // We are not master and the user is working on another tab, we are not in
+    // a hurry to spam the browser with work, plus there are typically acouple
+    // of db access required in most operations, we wait a sec?
+    if (_reloadTimeoutId !== null) {
+      // Stop the current timeout - we have updates
+      Meteor.clearTimeout(_reloadTimeoutId);
+    }
+    _reloadTimeoutId = Meteor.setTimeout(function() {
+      // Ok, we reset reference and go to work
+      _reloadTimeoutId = null;
+      // Resume methods
+      _loadMethods();
+      // Resume normal writes
+      _isReloading = false;
+    }, 500);
+
+  }
+}, false);
