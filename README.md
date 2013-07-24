@@ -38,7 +38,7 @@ It's possible to mount an allready existing collection on a `groundDB` eg.:
     collection: Meteor.users
   });
 ```
-*The example will keep `Meteor.user()` returning correct user details*
+*The example will keep `Meteor.user()` returning correct user details - Supports smartCollections by this option too*
 
 ##Security
 GroundDB works just like a normal `Meteor.Collection` why `allow` and `deny` still works.

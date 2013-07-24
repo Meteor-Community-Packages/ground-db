@@ -1,9 +1,27 @@
 // @export GroundDB
 GroundDB = function(name, options) {
   // Inheritance Meteor Collection can be set by options.collection
-  return (options && options.collection &&
-          options.collection instanceof Meteor.Collection) ?
-          options.collection : new Meteor.Collection(name, options);
+  // Accepts smart collections by Arunoda Susiripala
+  var self;
+  if (options && options.collection) {
+    // User set a collection in options
+    if (options.collection instanceof Meteor.Collection) {
+      self = options.collection;
+    } else {
+      if ((options.collection._remoteCollection instanceof Meteor.Collection)) {
+        // We are in a smart collection
+        self = options.collection._remoteCollection;
+      } else {
+        // self not set, throw an error
+        throw new Error('GroundDB got an invalid option: collection');
+      }
+    }
+  } else {
+    // We instanciate a new meteor collection
+    self = new Meteor.Collection(name, options);
+  }
+
+  return self;
 };
 
 // TODO:
