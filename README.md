@@ -21,7 +21,7 @@ GroundDB is a fast and thin layer providing Meteor offline database and methods 
   // just ground the database:
   GroundDB(list);
 ```
-*Example of different patterns*
+*Example of different patterns. Grounding a `Meteor.Collection` will attach the `cache`, `resume` and `cross tabs update offline`*
 
 [Live basic test](http://grounddb.meteor.com/)
 
@@ -31,7 +31,8 @@ GroundDB is a fast and thin layer providing Meteor offline database and methods 
 * Fallback to normal Meteor.Collection if no localstorage
 * Resume of changes in collections
 * Resume of methods
-* Works offline cross window tabs
+* Works offline updating cross window tabs
+* Support for SmartCollection *(unconfirmed)*
 
 ##Support
 Tested on Chrome, Safari, Firefox and IE9 *(though appcache is not supported in IE9 tabs are updated when offline)* - but all browsers that support localstorage *contains a FF safe test of localstorage*
@@ -39,7 +40,7 @@ Tested on Chrome, Safari, Firefox and IE9 *(though appcache is not supported in 
 If localstorage is not supported the groundDB simply work as a normal `Meteor.Collection`
 
 ##Meteor Collection Interface
-GroundDB is like a normal Meteor.Collection - but changes and outstanding methods are cached and resumed.
+GroundDB is like a normal `Meteor.Collection` - but changes and outstanding methods are cached and resumed.
 
 ##Concept
 Localstorage is simple and widely supported - but slow - *Thats why we only use it for caching databases and methods + trying to limit the read and writes from it.*
@@ -53,7 +54,7 @@ It's possible to mount an allready existing collection on a `groundDB` eg.:
 ```js
   Meteor.users = new GroundDB(Meteor.users);
 ```
-*The example will keep `Meteor.user()` returning correct user details - Supports smartCollections by this option too*
+*The example will keep `Meteor.user()` returning correct user details - even if offline - Supports smartCollections by this option too*
 
 ##Security
 GroundDB works just like a normal `Meteor.Collection` why `allow` and `deny` still works.
