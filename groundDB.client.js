@@ -63,7 +63,12 @@ var _getGroundDBPrefix = function(suffix) {
 var _saveObject = function(name, object) {
   if (storage && _isReloading === false) {
     var cachedDoc = EJSON.stringify(object);
-    storage.setItem(_getGroundDBPrefix(name), cachedDoc);
+
+    try {
+      storage.setItem(_getGroundDBPrefix(name), cachedDoc);
+    } catch (e) {
+      GroundDB.onQuotaExceeded();
+    }
   }
 };
 
@@ -85,7 +90,9 @@ var _loadObject = function(name) {
 var _groundDatabases = {};
 
 // @export GroundDB
-GroundDB = function(name, options) {
+window.GroundDB = function(name, options) {
+// TODO: change when linker is official
+
   // Inheritance Meteor Collection can be set by options.collection
   // Accepts smart collections by Arunoda Susiripala
   var self;
@@ -200,7 +207,7 @@ GroundDB = function(name, options) {
   // Bulk Load database from local to memory
   self._loadDatabase = function() {
     // Then load the docs into minimongo
-    console.log('Loaded database: ' + self._name);
+    GroundDB.onResumeDatabase(self._name);
 
     // Load object from localstorage
     var docs = _loadObject('db.' + self._name);
@@ -219,6 +226,7 @@ GroundDB = function(name, options) {
     // If data loaded from localstorage then its ok to save - otherwise we
     // would override with less data
     if (self._databaseLoaded) {
+      GroundDB.onCacheDatabase(self._name);
       // Save the collection into localstorage
       _saveObject('db.' + self._name, self._collection.docs);
     }
@@ -237,6 +245,38 @@ GroundDB = function(name, options) {
   self._loadDatabase();
 
   return self;
+};
+
+///////////////////////////////// EVENTS ///////////////////////////////////////
+
+// This is an overridable method for hooking on to the GroundDB events
+
+GroundDB.onQuotaExceeded = function() {
+  throw new Error('Quota exceeded!');
+};
+
+GroundDB.onResumeDatabase = function(name) {
+  console.log('Resume database: ' + name);
+};
+
+GroundDB.onResumeMethods = function() {
+  console.log('Resume outstanding methods');
+};
+
+GroundDB.onMethodCall = function(methodCall) {
+  console.log('Method call ' + methodCall._message.method);
+};
+
+GroundDB.onCacheDatabase = function(name) {
+  console.log('Cache database: ' + name);
+};
+
+GroundDB.onCacheMethods = function() {
+  console.log('Cache methods');
+};
+
+GroundDB.onTabSync = function(key) {
+  console.log('Cache is updated by: ' + key);
 };
 
 ///////////////////////////// RESUME METHODS ///////////////////////////////////
@@ -260,7 +300,7 @@ var _getMethodsList = function() {
         args: method._message.params,
         options: { wait: method._wait }
       });
-      console.log('call ' + method._message.method);
+      GroundDB.onMethodCall(method);
     }
   });
 
@@ -349,14 +389,14 @@ var _loadMethods = function() {
 
   // Dispatch methods loaded event
   _methodsResumed = true;
-  console.log('Resumed outstanding methods');
+  GroundDB.onResumeMethods();
 }; // EO load methods
 
 
 // Save the methods into the localstorage
 var _saveMethods = function() {
   if (_methodsResumed) {
-    console.log('Store outstanding methods');
+    GroundDB.onCacheMethods();
 
     // Save outstanding methods to localstorage
     _saveObject('methods', _getMethodsList());
@@ -411,7 +451,7 @@ window.addEventListener('storage', function(e) {
   var prefixRegExp = new RegExp('^'+_prefixGroundDB+'method');
   // Make sure its a prefixed change
   if (prefixRegExp.test(e.key)) {
-    console.log(e.key);
+    GroundDB.onTabSync(e.key);
     // We are going to into reload, stop all access to localstorage
     _isReloading = true;
     // We are not master and the user is working on another tab, we are not in
