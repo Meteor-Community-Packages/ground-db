@@ -87,9 +87,25 @@ var _groundDatabases = {};
 // @export GroundDB
 GroundDB = function(name, options) {
   // Inheritance Meteor Collection can be set by options.collection
-  var self = (options && options.collection &&
-          options.collection instanceof Meteor.Collection) ?
-          options.collection : new Meteor.Collection(name, options);
+  // Accepts smart collections by Arunoda Susiripala
+  var self;
+  if (options && options.collection) {
+    // User set a collection in options
+    if (options.collection instanceof Meteor.Collection) {
+      self = options.collection;
+    } else {
+      if ((options.collection._remoteCollection instanceof Meteor.Collection)) {
+        // We are in a smart collection
+        self = options.collection._remoteCollection;
+      } else {
+        // self not set, throw an error
+        throw new Error('GroundDB got an invalid option: collection');
+      }
+    }
+  } else {
+    // We instanciate a new meteor collection
+    self = new Meteor.Collection(name, options);
+  }
 
   // Add to pointer register
   _groundDatabases[name] = self;
@@ -253,26 +269,28 @@ var _getMethodsList = function() {
 // Extract only newly added methods from localstorage
 var _getMethodUpdates = function(newMethods) {
   var result = [];
-  // Get the old methods allready in memory
-  // We could have done an optimized slice version or just starting at
-  // oldMethods.length, but this tab is not in focus
-  var oldMethods = _getMethodsList();
-  // Iterate over the new methods, old ones should be ordered in beginning of
-  // newMethods we do a simple test an throw an error if thats not the case
-  for (var i=0; i < newMethods.length; i++) {
+  if (newMethods && newMethods.length > 0) {
+    // Get the old methods allready in memory
+    // We could have done an optimized slice version or just starting at
+    // oldMethods.length, but this tab is not in focus
+    var oldMethods = _getMethodsList();
+    // Iterate over the new methods, old ones should be ordered in beginning of
+    // newMethods we do a simple test an throw an error if thats not the case
+    for (var i=0; i < newMethods.length; i++) {
 
-    if (i < oldMethods.length) {
-      // Do a hard slow test to make sure all is in sync
-      if (EJSON.stringify(oldMethods[i]) !== EJSON.stringify(newMethods[i])) {
+      if (i < oldMethods.length) {
+        // Do a hard slow test to make sure all is in sync
+        if (EJSON.stringify(oldMethods[i]) !== EJSON.stringify(newMethods[i])) {
           // The client data is corrupted, throw error or force the client to
           // reload, does not make sense to continue?
           window.location.reload();
+        }
+      } else {
+        // Ok out of oldMethods this is a new method call
+        result.push(newMethods[i]);
       }
-    } else {
-      // Ok out of oldMethods this is a new method call
-      result.push(newMethods[i]);
-    }
-  }
+    } // EO for iteration
+  } // EO check newMethods
 
   // return the result
   return result;
@@ -409,7 +427,7 @@ window.addEventListener('storage', function(e) {
       _loadMethods();
       // Resume normal writes
       _isReloading = false;
-    }, 500);
+    }, 100);
 
   }
 }, false);
