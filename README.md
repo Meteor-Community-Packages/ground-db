@@ -64,6 +64,7 @@ Database changes and methods will be sent to the server just like normal. The me
 
 ##Events
 The event api is as follows:
+~~~js
 GroundDB.onQuotaExceeded = function() {};
 GroundDB.onResumeDatabase = function(name) {};
 GroundDB.onResumeMethods = function() {};
@@ -71,6 +72,7 @@ GroundDB.onMethodCall = function(methodCall) {};
 GroundDB.onCacheDatabase = function(name) {};
 GroundDB.onCacheMethods = function() {};
 GroundDB.onTabSync = function(key) {};
+~~~
 
 ##Future
 * At the moment the conflict resolution is pretty basic last change recieved by server wins. This could be greatly improved by adding a proper conflict handler. *For more details look at comment in server.js*
