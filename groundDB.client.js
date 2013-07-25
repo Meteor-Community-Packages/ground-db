@@ -281,7 +281,17 @@ GroundDB.onCacheMethods = function() {
 };
 
 GroundDB.onTabSync = function(key) {
-  console.log('Cache is updated by: ' + key);
+  console.log('Sync - Cache is updated by: ' + key);
+};
+
+GroundDB.onCorruptedClientMemory = function() {
+  // Let error be thrown an visible for 5sec then reload app
+  Meteor.setTimeout(function() {
+    window.location.reload();
+  }, 5000);
+  // Throw an error, cannot continue - This should never happen
+  throw new Error('Outstanding methods is corrupted in memory - '+
+          'Reloading app in 5sec');
 };
 
 ///////////////////////////// RESUME METHODS ///////////////////////////////////
@@ -329,7 +339,7 @@ var _getMethodUpdates = function(newMethods) {
         if (EJSON.stringify(oldMethods[i]) !== EJSON.stringify(newMethods[i])) {
           // The client data is corrupted, throw error or force the client to
           // reload, does not make sense to continue?
-          window.location.reload();
+          GroundDB.onCorruptedClientMemory();
         }
       } else {
         // Ok out of oldMethods this is a new method call
@@ -358,23 +368,29 @@ var _loadMethods = function() {
       // FIFO buffer
       var method = methods.shift();
       // parse //
-      var methodParams = method.method.split('/');
-      var command = (methodParams.length > 2)?methodParams[2]:methodParams[1];
-      var collection = (methodParams.length > 2)?methodParams[1]:'';
+
+      var params = method.method.split('/');
+      var command = (params.length > 2)?params[2]:params[1];
+      var collection = (params.length > 2)?params[1]:'';
       // TODO: would have been nicer if SmartCollection used same naming as
       // Meteor
-      if (command === '_si_' || command === '_su_' || command === '_sr_') {
+      params = ''+params;
+      paramIndex = 0;
+      if (params === '_si_' || params === '_su_' || params === '_sr_') {
         // Get collection from SmartCollection call
-        collection = method.args.shift();
+        command = params;
+        collection = method.args[0];
+        paramIndex++;
       }
+
       // Do work on collection
       if (collection !== '') {
         // we are going to run an simulated insert - this is allready in db
         // since we are running local, so we remove it from the collection first
         if (_groundDatabases[collection]) {
           // The database is registered as a ground database
-          var mongoId = (method.args && method.args[0])?
-                  method.args[0]._id || method.args[0]:'';
+          var mongoId = (method.args && method.args[paramIndex])?
+                  method.args[paramIndex]._id || method.args[paramIndex]:'';
           // Get the document on the client - if found
           var doc = _groundDatabases[collection]._collection.findOne(mongoId);
 
@@ -390,16 +406,16 @@ var _loadMethods = function() {
             } // EO handle insert
             // Add tab support in SmartCollections
             if (command === '_su_') { // TODO: Warn if using $inc or $dec?
-              _groundDatabases[collection]._collection.update(mongoId,
-                      method.args[1]);
+              _groundDatabases[collection]._collection.update({ _id: mongoId },
+                      method.args[2]);
             }
             if (command === '_sr_') {
-              _groundDatabases[collection]._collection.remove(mongoId);
+              _groundDatabases[collection]._collection.remove({ _id: mongoId });
             }
           } else { // EO Else no doc found in client database
             // Add tab support in SmartCollections
             if (command === '_si_') {
-              _groundDatabases[collection]._collection.insert(doc);
+              _groundDatabases[collection]._collection.insert(method.args[1]);
             }
           }
         } // else collection would be a normal database

@@ -1,5 +1,5 @@
 Package.describe({
-  summary: "\u001b[32mv0.0.8\n"+
+  summary: "\u001b[32mv0.0.9\n"+
   "\u001b[33m-----------------------------------------\n"+
   "\u001b[0m GroundDB is a thin layer providing       \n"+
   "\u001b[0m Meteor offline database and methods      \n"+
