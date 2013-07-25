@@ -219,7 +219,12 @@ window.GroundDB = function(name, options) {
 
     // Initialize client documents
     _.each(self._checkDocs( (docs) ? docs : {} ), function(doc) {
-      self._collection.insert(doc);
+      var exists = self._collection.findOne({ _id: doc });
+      // If collection is populated before we get started then the data in
+      // memory would be considered latest therefor we dont load from local
+      if (!exists) {
+        self._collection.insert(doc);
+      }
     });
 
     self._databaseLoaded = true;
@@ -389,8 +394,9 @@ var _loadMethods = function() {
         // since we are running local, so we remove it from the collection first
         if (_groundDatabases[collection]) {
           // The database is registered as a ground database
-          var mongoId = (method.args && method.args[paramIndex])?
-                  method.args[paramIndex]._id || method.args[paramIndex]:'';
+          var mongoId = Meteor.idParse((method.args && method.args[paramIndex])?
+                  method.args[paramIndex]._id || method.args[paramIndex]:'');
+
           // Get the document on the client - if found
           var doc = _groundDatabases[collection]._collection.findOne(mongoId);
 
@@ -410,7 +416,7 @@ var _loadMethods = function() {
                       method.args[2]);
             }
             if (command === '_sr_') {
-              _groundDatabases[collection]._collection.remove({ _id: mongoId });
+              _groundDatabases[collection]._collection.remove(mongoId);
             }
           } else { // EO Else no doc found in client database
             // Add tab support in SmartCollections
@@ -508,7 +514,7 @@ window.addEventListener('storage', function(e) {
       _loadMethods();
       // Resume normal writes
       _isReloading = false;
-    }, 100);
+    }, 200);
 
   }
 }, false);
