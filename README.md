@@ -32,7 +32,7 @@ GroundDB is a fast and thin layer providing Meteor offline database and methods 
 * Resume of changes in collections
 * Resume of methods
 * Works offline updating cross window tabs
-* Support for SmartCollection *(unconfirmed)*
+* Support for [SmartCollection](https://github.com/arunoda/meteor-smart-collections)
 
 ##Support
 Tested on Chrome, Safari, Firefox and IE9 *(though appcache is not supported in IE9 tabs are updated when offline)* - but all browsers that support localstorage *contains a FF safe test of localstorage*
@@ -52,7 +52,7 @@ When the app loads GroundDB resumes methods and database changes - made when off
 ##Ground user details
 It's possible to mount an allready existing collection on a `groundDB` eg.:
 ```js
-  Meteor.users = new GroundDB(Meteor.users);
+  GroundDB(Meteor.users);
 ```
 *The example will keep `Meteor.user()` returning correct user details - even if offline - Supports smartCollections by this option too*
 
