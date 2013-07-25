@@ -356,14 +356,20 @@ var _loadMethods = function() {
       var methodParams = method.method.split('/');
       var command = (methodParams.length > 2)?methodParams[2]:methodParams[1];
       var collection = (methodParams.length > 2)?methodParams[1]:'';
-
+      // TODO: would have been nicer if SmartCollection used same naming as
+      // Meteor
+      if (command === '_si_' || command === '_su_' || command === '_sr_') {
+        // Get collection from SmartCollection call
+        collection = method.args.shift();
+      }
       // Do work on collection
       if (collection !== '') {
         // we are going to run an simulated insert - this is allready in db
         // since we are running local, so we remove it from the collection first
         if (_groundDatabases[collection]) {
           // The database is registered as a ground database
-          var mongoId = (method.args && method.args[0])?method.args[0]._id:'';
+          var mongoId = (method.args && method.args[0])?
+                  method.args[0]._id || method.args[0]:'';
           // Get the document on the client - if found
           var doc = _groundDatabases[collection]._collection.findOne(mongoId);
 
@@ -377,7 +383,20 @@ var _loadMethods = function() {
               // inserted
               _groundDatabases[collection]._collection.remove(mongoId);
             } // EO handle insert
-          } // EO Else no doc found in client database
+            // Add tab support in SmartCollections
+            if (command === '_su_') { // TODO: Warn if using $inc or $dec?
+              _groundDatabases[collection]._collection.update(mongoId,
+                      method.args[1]);
+            }
+            if (command === '_sr_') {
+              _groundDatabases[collection]._collection.remove(mongoId);
+            }
+          } else { // EO Else no doc found in client database
+            // Add tab support in SmartCollections
+            if (command === '_si_') {
+              _groundDatabases[collection]._collection.insert(doc);
+            }
+          }
         } // else collection would be a normal database
       } // EO collection work
 
