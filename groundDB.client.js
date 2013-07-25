@@ -219,7 +219,7 @@ window.GroundDB = function(name, options) {
 
     // Initialize client documents
     _.each(self._checkDocs( (docs) ? docs : {} ), function(doc) {
-      var exists = self._collection.findOne({ _id: doc });
+      var exists = self._collection.findOne({ _id: doc._id });
       // If collection is populated before we get started then the data in
       // memory would be considered latest therefor we dont load from local
       if (!exists) {
