@@ -12,9 +12,10 @@ GroundDB = function(name, options) {
     if (name instanceof Meteor.Collection) {
       self = name;
     } else {
-      if (name._remoteCollection instanceof Meteor.Collection) {
+      if (typeof Meteor.SmartCollection !== 'undefined' &&
+              name instanceof Meteor.SmartCollection) {
         // We are in a smart collection
-        self = name._remoteCollection;
+        self = name._collection;
       } else {
         // self not set, throw an error
         throw new Error('GroundDB got an invalid name or collection');

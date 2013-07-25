@@ -105,9 +105,10 @@ window.GroundDB = function(name, options) {
     if (name instanceof Meteor.Collection) {
       self = name;
     } else {
-      if (name._remoteCollection instanceof Meteor.Collection) {
+      if (name._localCollection instanceof Meteor.Collection) {
         // We are in a smart collection
-        self = name._remoteCollection;
+        self = name._localCollection;
+        self.name = name.name;
       } else {
         // self not set, throw an error
         throw new Error('GroundDB got an invalid name or collection');
@@ -115,77 +116,81 @@ window.GroundDB = function(name, options) {
     }
   }
 
+  self.name = (self.name)? self.name : self._name;
+
   // Add to pointer register
-  _groundDatabases[ self._name ] = self;
+  _groundDatabases[ self.name ] = self;
 
   // We have to overwrite the standard Meteor code - It throws an Error when
   // Documents allready in the docs. So we handle the conflict instead...
   // TODO: Could this be cleaned up?
   ////////// BEGIN mongo-livedata/collection.js 103
-  self._connection._stores[ self._name ].update = function (msg) {
-    var mongoId = Meteor.idParse(msg.id);
-    var doc = self._collection.findOne(mongoId);
-    // Is this a "replace the whole doc" message coming from the quiescence
-    // of method writes to an object? (Note that 'undefined' is a valid
-    // value meaning "remove it".)
-    if (msg.msg === 'replace') {
-      var replace = msg.replace;
-      if (!replace) {
+  if (self._connection && self._connection._stores[ self.name ]) {
+    self._connection._stores[ self.name ].update = function (msg) {
+      var mongoId = Meteor.idParse(msg.id);
+      var doc = self._collection.findOne(mongoId);
+      // Is this a "replace the whole doc" message coming from the quiescence
+      // of method writes to an object? (Note that 'undefined' is a valid
+      // value meaning "remove it".)
+      if (msg.msg === 'replace') {
+        var replace = msg.replace;
+        if (!replace) {
+          if (doc) {
+            self._collection.remove(mongoId);
+          }
+        } else if (!doc) {
+          self._collection.insert(replace);
+        } else {
+          // XXX check that replace has no $ ops
+          self._collection.update(mongoId, replace);
+        }
+        return;
+      } else if (msg.msg === 'added') {
+
         if (doc) {
+          // Solve the conflict - server wins
+          // Then remove the client document
+          self._collection.remove(doc._id);
+        }
+        // And insert the server document
+        self._collection.insert(_.extend({_id: mongoId}, msg.fields));
+
+      } else if (msg.msg === 'removed') {
+        if (doc) {
+          // doc found - remove it
           self._collection.remove(mongoId);
+        } else {
+          throw new Error("Expected to find a document present for removed");
         }
-      } else if (!doc) {
-        self._collection.insert(replace);
-      } else {
-        // XXX check that replace has no $ ops
-        self._collection.update(mongoId, replace);
-      }
-      return;
-    } else if (msg.msg === 'added') {
 
-      if (doc) {
-        // Solve the conflict - server wins
-        // Then remove the client document
-        self._collection.remove(doc._id);
-      }
-      // And insert the server document
-      self._collection.insert(_.extend({_id: mongoId}, msg.fields));
-
-    } else if (msg.msg === 'removed') {
-      if (doc) {
-        // doc found - remove it
-        self._collection.remove(mongoId);
-      } else {
-        throw new Error("Expected to find a document present for removed");
-      }
-
-    } else if (msg.msg === 'changed') {
-      if (!doc) {
-        throw new Error("Expected to find a document to change: " + mongoId);
-      } else {
-        if (!_.isEmpty(msg.fields)) {
-          var modifier = {};
-          _.each(msg.fields, function (value, key) {
-            if (value === undefined) {
-              if (!modifier.$unset) {
-                modifier.$unset = {};
+      } else if (msg.msg === 'changed') {
+        if (!doc) {
+          throw new Error("Expected to find a document to change: " + mongoId);
+        } else {
+          if (!_.isEmpty(msg.fields)) {
+            var modifier = {};
+            _.each(msg.fields, function (value, key) {
+              if (value === undefined) {
+                if (!modifier.$unset) {
+                  modifier.$unset = {};
+                }
+                modifier.$unset[key] = 1;
+              } else {
+                if (!modifier.$set) {
+                  modifier.$set = {};
+                }
+                modifier.$set[key] = value;
               }
-              modifier.$unset[key] = 1;
-            } else {
-              if (!modifier.$set) {
-                modifier.$set = {};
-              }
-              modifier.$set[key] = value;
-            }
-          });
-          self._collection.update(mongoId, modifier);
+            });
+            self._collection.update(mongoId, modifier);
+          }
         }
+      } else {
+        throw new Error("I don't know how to deal with this message");
       }
-    } else {
-      throw new Error("I don't know how to deal with this message");
-    }
 
-  };
+    };
+  }
   ///////// EO mongo-livedata/collection.js 153
 
   self._databaseLoaded = false;
@@ -207,10 +212,10 @@ window.GroundDB = function(name, options) {
   // Bulk Load database from local to memory
   self._loadDatabase = function() {
     // Then load the docs into minimongo
-    GroundDB.onResumeDatabase(self._name);
+    GroundDB.onResumeDatabase(self.name);
 
     // Load object from localstorage
-    var docs = _loadObject('db.' + self._name);
+    var docs = _loadObject('db.' + self.name);
 
     // Initialize client documents
     _.each(self._checkDocs( (docs) ? docs : {} ), function(doc) {
@@ -226,9 +231,9 @@ window.GroundDB = function(name, options) {
     // If data loaded from localstorage then its ok to save - otherwise we
     // would override with less data
     if (self._databaseLoaded) {
-      GroundDB.onCacheDatabase(self._name);
+      GroundDB.onCacheDatabase(self.name);
       // Save the collection into localstorage
-      _saveObject('db.' + self._name, self._collection.docs);
+      _saveObject('db.' + self.name, self._collection.docs);
     }
   };
 
