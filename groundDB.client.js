@@ -116,7 +116,17 @@ window.GroundDB = function(name, options) {
     }
   }
 
+  // Is this an offline database?
+  self.offlineDatabase = false;
+
+  // Initialize collection name
   self.name = (self.name)? self.name : self._name;
+
+  if (self.name === null && typeof options === 'string' && options !== '') {
+    // ok we have a named offline only database
+    self.name = options;
+    self.offlineDatabase = true;
+  }
 
   // Add to pointer register
   _groundDatabases[ self.name ] = self;
@@ -286,7 +296,7 @@ GroundDB.onCacheMethods = function() {
 };
 
 GroundDB.onTabSync = function(key) {
-  console.log('Sync - Cache is updated by: ' + key);
+  console.log('Sync tabs - Cache is updated by: ' + key);
 };
 
 GroundDB.onCorruptedClientMemory = function() {
@@ -305,12 +315,12 @@ GroundDB.onCorruptedClientMemory = function() {
 var _methodsResumed = false;
 
 // Get a nice array of current methods
-var _getMethodsList = function() {
+var _getMethodsList = function(clientMemory) {
   // Array of outstanding methods
   var methods = [];
 
   // Convert the data into nice array
-  _.each(Meteor.default_connection._methodInvokers, function(method) {
+  _.each(clientMemory, function(method) {
     if (method._message.method !== 'login') {
       // Dont cache login calls - they are spawned pr. default when accounts
       // are installed
@@ -328,13 +338,13 @@ var _getMethodsList = function() {
 };
 
 // Extract only newly added methods from localstorage
-var _getMethodUpdates = function(newMethods) {
+var _getMethodUpdates = function(newMethods, clientMemory) {
   var result = [];
   if (newMethods && newMethods.length > 0) {
     // Get the old methods allready in memory
     // We could have done an optimized slice version or just starting at
     // oldMethods.length, but this tab is not in focus
-    var oldMethods = _getMethodsList();
+    var oldMethods = _getMethodsList(clientMemory);
     // Iterate over the new methods, old ones should be ordered in beginning of
     // newMethods we do a simple test an throw an error if thats not the case
     for (var i=0; i < newMethods.length; i++) {
@@ -357,13 +367,64 @@ var _getMethodUpdates = function(newMethods) {
   return result;
 };
 
+// Offline client only databases will sync a bit different than normal
+// This function is a bit hard - but it works - optimal solution could be to
+// have virtual method calls it would complicate things
+var _syncDatabase = function(name) {
+  var collection = _groundDatabases[name];
+  if (collection && collection.offlineDatabase) {
+    // Hard reset database?
+    var newDocs = _loadObject('db.' + name);
+    collection.find().forEach(function(doc) {
+      // Remove document
+      collection._collection.remove(doc._id);
+      // If found in new documents then hard update
+      if (typeof newDocs[doc._id] !== 'undefined') {
+        // Update doc
+        collection._collection.insert(newDocs[doc._id]);
+        delete newDocs[doc._id];
+      }
+    });
+    _.each(newDocs, function (doc) {
+        // insert doc
+        collection._collection.insert(doc);
+    });
+  }
+};
+
+var _reloadTimeoutId = null;
+
+// Syncronize tabs via method calls
+var _syncMethods = function() {
+  // We are going to into reload, stop all access to localstorage
+  _isReloading = true;
+  // We are not master and the user is working on another tab, we are not in
+  // a hurry to spam the browser with work, plus there are typically acouple
+  // of db access required in most operations, we wait a sec?
+  if (_reloadTimeoutId !== null) {
+    // Stop the current timeout - we have updates
+    Meteor.clearTimeout(_reloadTimeoutId);
+  }
+
+  _reloadTimeoutId = Meteor.setTimeout(function() {
+    // Ok, we reset reference and go to work
+    _reloadTimeoutId = null;
+
+    // Resume methods
+    _loadMethods();
+
+    // Resume normal writes
+    _isReloading = false;
+  }, 200);
+};
+
 // load methods from localstorage and resume the methods
 var _loadMethods = function() {
   // Load methods from local
   var methods = _loadObject('methods');
 
   // We are only going to submit the diff
-  methods = _getMethodUpdates(methods);
+  methods = _getMethodUpdates(methods, Meteor.default_connection._methodInvokers);
 
   // If any methods outstanding
   if (methods) {
@@ -372,8 +433,8 @@ var _loadMethods = function() {
     while (methods.length > 0) {
       // FIFO buffer
       var method = methods.shift();
-      // parse //
 
+      // parse "/collection/command" or "command"
       var params = method.method.split('/');
       var command = (params.length > 2)?params[2]:params[1];
       var collection = (params.length > 2)?params[1]:'';
@@ -412,16 +473,19 @@ var _loadMethods = function() {
             } // EO handle insert
             // Add tab support in SmartCollections
             if (command === '_su_') { // TODO: Warn if using $inc or $dec?
+              // params 0:id 1:modif
               _groundDatabases[collection]._collection.update({ _id: mongoId },
-                      method.args[2]);
+                      method.args[paramIndex+1]);
             }
             if (command === '_sr_') {
-              _groundDatabases[collection]._collection.remove(mongoId);
+              // param 0:id
+              _groundDatabases[collection]._collection.remove(method.args[paramIndex]);
             }
           } else { // EO Else no doc found in client database
             // Add tab support in SmartCollections
+            // param 0:doc
             if (command === '_si_') {
-              _groundDatabases[collection]._collection.insert(method.args[1]);
+              _groundDatabases[collection]._collection.insert(method.args[paramIndex]);
             }
           }
         } // else collection would be a normal database
@@ -487,34 +551,26 @@ Meteor.startup(function() {
 });
 
 /////////////////////// LOAD CHANGES FROM OTHER TABS ///////////////////////////
-var _reloadTimeoutId = null;
 
 // Add support for multiple tabs
 window.addEventListener('storage', function(e) {
   // Data changed in another tab, it would have updated localstorage, I'm
   // outdated so reload the tab and localstorage - but we test the prefix on the
   // key - since we actually make writes in the localstorage feature test
-  var prefixRegExp = new RegExp('^'+_prefixGroundDB+'method');
+  var prefixMethodRegEx = new RegExp('^' + _prefixGroundDB + 'method');
+  var prefixDatabaseRegEx = new RegExp('^' + _prefixGroundDB + 'db.');
   // Make sure its a prefixed change
-  if (prefixRegExp.test(e.key)) {
+  if (prefixMethodRegEx.test(e.key) || prefixDatabaseRegEx.test(e.key) ) {
     GroundDB.onTabSync(e.key);
-    // We are going to into reload, stop all access to localstorage
-    _isReloading = true;
-    // We are not master and the user is working on another tab, we are not in
-    // a hurry to spam the browser with work, plus there are typically acouple
-    // of db access required in most operations, we wait a sec?
-    if (_reloadTimeoutId !== null) {
-      // Stop the current timeout - we have updates
-      Meteor.clearTimeout(_reloadTimeoutId);
-    }
-    _reloadTimeoutId = Meteor.setTimeout(function() {
-      // Ok, we reset reference and go to work
-      _reloadTimeoutId = null;
-      // Resume methods
-      _loadMethods();
-      // Resume normal writes
-      _isReloading = false;
-    }, 200);
 
+    // Method calls are delayed a bit for optimization
+    if (prefixMethodRegEx.test(e.key)) {
+      _syncMethods();
+    }
+
+    // Sync offline client only databases - These update instantly
+    if (prefixDatabaseRegEx.test(e.key)) {
+      _syncDatabase(e.key.replace(prefixDatabaseRegEx, ''));
+    }
   }
 }, false);
