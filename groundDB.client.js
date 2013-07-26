@@ -226,9 +226,9 @@ window.GroundDB = function(name, options) {
         if (doc) {
           // doc found - remove it
           self._collection.remove(mongoId);
-        } /*else {
+        } else {
           throw new Error("Expected to find a document present for removed");
-        }*/
+        }
 
       } else if (msg.msg === 'changed') {
         if (!doc) {
@@ -611,7 +611,7 @@ var _interceptGroundedDatabases = function(args) {
             _id: args[1][0]._id
           });
 */          //args[0] = '/' + collection + '/ground:' + command;
-          args[1].push({ '_serverTime': GroundDB.now() });
+          args[1][0]._serverTime = GroundDB.now();
         }
         console.log(args);
       }

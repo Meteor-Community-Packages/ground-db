@@ -59,12 +59,12 @@ GroundDB = function(name, options) {
     remove: Meteor.default_server.method_handlers['/'+self.name+'/remove']
   };
 
-  Meteor.default_server.method_handlers['/' + self.name + '/remove'] = function(id, timestamp) {
+  Meteor.default_server.method_handlers['/' + self.name + '/remove'] = function(selector, timestamp) {
     // Remove document??
     console.log('REMOVE OVERWRITE');
-    self.remove(id);
-    console.log(id);
-    console.log(timestamp);
+    self.remove(selector._id);
+    console.log(selector);
+    console.log(selector._serverTime);
   };
 
   return self;
