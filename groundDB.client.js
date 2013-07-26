@@ -152,9 +152,14 @@ window.GroundDB = function(name, options) {
   // Initialize collection name
   self.name = (self.name)? self.name : self._name;
 
-  if (self.name === null && typeof options === 'string' && options !== '') {
-    // ok we have a named offline only database
-    self.name = options;
+  // We have an client-side only offline database
+  if (self.name === null) {
+    if (typeof options === 'string' && options !== '') {
+      // ok we have a named offline only database
+      self.name = options;
+    } else {
+      self.name = 'null';
+    }
     self.offlineDatabase = true;
   }
 
@@ -325,8 +330,8 @@ GroundDB.onCacheMethods = function() {
   console.log('Cache methods');
 };
 
-GroundDB.onTabSync = function(key) {
-  console.log('Sync tabs - Cache is updated by: ' + key);
+GroundDB.onTabSync = function(type, key) {
+  console.log('Sync tabs - Cache is updated by: ' + type);
 };
 
 GroundDB.onCorruptedClientMemory = function() {
@@ -345,12 +350,12 @@ GroundDB.onCorruptedClientMemory = function() {
 var _methodsResumed = false;
 
 // Get a nice array of current methods
-var _getMethodsList = function(clientMemory) {
+var _getMethodsList = function() {
   // Array of outstanding methods
   var methods = [];
 
   // Convert the data into nice array
-  _.each(clientMemory, function(method) {
+  _.each(Meteor.default_connection._methodInvokers, function(method) {
     if (method._message.method !== 'login') {
       // Dont cache login calls - they are spawned pr. default when accounts
       // are installed
@@ -363,18 +368,17 @@ var _getMethodsList = function(clientMemory) {
       GroundDB.onMethodCall(method);
     }
   });
-
   return methods;
 };
 
 // Extract only newly added methods from localstorage
-var _getMethodUpdates = function(newMethods, clientMemory) {
+var _getMethodUpdates = function(newMethods) {
   var result = [];
   if (newMethods && newMethods.length > 0) {
     // Get the old methods allready in memory
     // We could have done an optimized slice version or just starting at
     // oldMethods.length, but this tab is not in focus
-    var oldMethods = _getMethodsList(clientMemory);
+    var oldMethods = _getMethodsList();
     // Iterate over the new methods, old ones should be ordered in beginning of
     // newMethods we do a simple test an throw an error if thats not the case
     for (var i=0; i < newMethods.length; i++) {
@@ -392,7 +396,6 @@ var _getMethodUpdates = function(newMethods, clientMemory) {
       }
     } // EO for iteration
   } // EO check newMethods
-
   // return the result
   return result;
 };
@@ -408,7 +411,9 @@ var _syncDatabase = function(name) {
   // We set a small delay in case of more updates within the wait
   syncDatabaseDelay.oneTimeout(function() {
     var collection = _groundDatabases[name];
-    if (collection && collection.offlineDatabase) {
+    if (collection && collection.offlineDatabase === true) {
+      // Add event hook
+      GroundDB.onTabSync('database', name);
       // Hard reset database?
       var newDocs = _loadObject('db.' + name);
       collection.find().forEach(function(doc) {
@@ -439,6 +444,8 @@ var _syncMethods = function() {
   // a hurry to spam the browser with work, plus there are typically acouple
   // of db access required in most operations, we wait a sec?
   syncMethodsDelay.oneTimeout(function() {
+    // Add event hook
+    GroundDB.onTabSync('methods');
     // Resume methods
     _loadMethods();
     // Resume normal writes
@@ -454,7 +461,7 @@ var _loadMethods = function() {
   var methods = _loadObject('methods');
 
   // We are only going to submit the diff
-  methods = _getMethodUpdates(methods, Meteor.default_connection._methodInvokers);
+  methods = _getMethodUpdates(methods);
 
   // If any methods outstanding
   if (methods) {
@@ -532,19 +539,14 @@ var _loadMethods = function() {
   GroundDB.onResumeMethods();
 }; // EO load methods
 
-var saveMethodsDelay = new OneTimeout();
-
 // Save the methods into the localstorage
 var _saveMethods = function() {
   if (_methodsResumed) {
     // Ok memory is initialized
-    saveMethodsDelay.oneTimeout(function() {
-      // We could perhaps implement a wait to buffer up multiple writes into one?
-      GroundDB.onCacheMethods();
+    GroundDB.onCacheMethods();
 
-      // Save outstanding methods to localstorage
-      _saveObject('methods', _getMethodsList());
-    }, 150);
+    // Save outstanding methods to localstorage
+    _saveObject('methods', _getMethodsList());
   }
 };
 
@@ -592,20 +594,15 @@ window.addEventListener('storage', function(e) {
   // Data changed in another tab, it would have updated localstorage, I'm
   // outdated so reload the tab and localstorage - but we test the prefix on the
   // key - since we actually make writes in the localstorage feature test
-  var prefixMethodRegEx = new RegExp('^' + _prefixGroundDB + 'method');
   var prefixDatabaseRegEx = new RegExp('^' + _prefixGroundDB + 'db.');
-  // Make sure its a prefixed change
-  if (prefixMethodRegEx.test(e.key) || prefixDatabaseRegEx.test(e.key) ) {
-    GroundDB.onTabSync(e.key);
 
-    // Method calls are delayed a bit for optimization
-    if (prefixMethodRegEx.test(e.key)) {
-      _syncMethods();
-    }
+  // Method calls are delayed a bit for optimization
+  if (e.key === _prefixGroundDB + 'methods') {
+    _syncMethods('mehods');
+  }
 
-    // Sync offline client only databases - These update instantly
-    if (prefixDatabaseRegEx.test(e.key)) {
-      _syncDatabase(e.key.replace(prefixDatabaseRegEx, ''));
-    }
+  // Sync offline client only databases - These update instantly
+  if (prefixDatabaseRegEx.test(e.key)) {
+    _syncDatabase(e.key.replace(prefixDatabaseRegEx, ''));
   }
 }, false);
