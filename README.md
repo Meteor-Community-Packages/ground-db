@@ -100,9 +100,9 @@ It's possible to ground an allready existing `smartCollectin` on a `groundDB` eg
 ##Resume of outstanding methods
 Database changes and methods will be sent to the server just like normal. The methods are sent to server after relogin - this way `this.userId` isset when running on the server. In other words: `Just like normal`
 
-##Events
+##Events *- client-side*
 The event api is as follows:
-~~~js
+```js
 GroundDB.onQuotaExceeded = function() {};
 GroundDB.onResumeDatabase = function(name) {};
 GroundDB.onResumeMethods = function() {};
@@ -110,7 +110,13 @@ GroundDB.onMethodCall = function(methodCall) {};
 GroundDB.onCacheDatabase = function(name) {};
 GroundDB.onCacheMethods = function() {};
 GroundDB.onTabSync = function(key) {};
-~~~
+```
+
+##Conflict handling *IN the works - not ready for use yet*
+The conflict handling api is as follows:
+```js
+GroundDB.now(); // Returns server timestamp works on both client and server
+```
 
 ##Future
 * At the moment the conflict resolution is pretty basic last change recieved by server wins. This could be greatly improved by adding a proper conflict handler. *For more details look at comment in server.js*

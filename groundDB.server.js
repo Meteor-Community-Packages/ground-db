@@ -29,6 +29,9 @@ GroundDB = function(name, options) {
     }
   }
 
+  // Initialize collection name
+  self.name = (self.name)? self.name : self._name;
+
   if (self.name !== null) {
     var cursor = self.find({});
     var handle = cursor.observeChanges({
@@ -50,7 +53,26 @@ GroundDB = function(name, options) {
     });
   }
 
+  var _super = {
+    insert: Meteor.default_server.method_handlers['/'+self.name+'/insert'],
+    update: Meteor.default_server.method_handlers['/'+self.name+'/update'],
+    remove: Meteor.default_server.method_handlers['/'+self.name+'/remove']
+  };
+
+  Meteor.default_server.method_handlers['/' + self.name + '/remove'] = function(id, timestamp) {
+    // Remove document??
+    console.log('REMOVE OVERWRITE');
+    self.remove(id);
+    console.log(id);
+    console.log(timestamp);
+  };
+
   return self;
+};
+
+// Unify client / server api
+GroundDB.now = function() {
+  return Date.now();
 };
 
 // TODO:

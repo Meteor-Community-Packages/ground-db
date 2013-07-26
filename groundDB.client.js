@@ -114,7 +114,7 @@ var OneTimeout = function() {
   };
 };
 
-////////////////////////// GET SERVER TIME DIFFERENCE ///////////////////////////
+////////////////////////// GET SERVER TIME DIFFERENCE //////////////////////////
 
 var _serverTimeDiff = 0; // Time difference in ms
 
@@ -135,12 +135,6 @@ if (storage) {
     }); // EO Server call
   });
 }
-
-_getServerDate = {
-  now: function() {
-    return Date.now() + _serverTimeDiff;
-  }
-};
 
 //////////////////////////////// GROUND DATABASE ///////////////////////////////
 
@@ -232,9 +226,9 @@ window.GroundDB = function(name, options) {
         if (doc) {
           // doc found - remove it
           self._collection.remove(mongoId);
-        } else {
+        } /*else {
           throw new Error("Expected to find a document present for removed");
-        }
+        }*/
 
       } else if (msg.msg === 'changed') {
         if (!doc) {
@@ -376,6 +370,10 @@ GroundDB.onCorruptedClientMemory = function() {
   // Throw an error, cannot continue - This should never happen
   throw new Error('Outstanding methods is corrupted in memory - '+
           'Reloading app in 5sec');
+};
+
+GroundDB.now = function() {
+  return Date.now() + _serverTimeDiff;
 };
 
 ///////////////////////////// RESUME METHODS ///////////////////////////////////
@@ -531,7 +529,6 @@ var _loadMethods = function() {
 
           // Get the document on the client - if found
           var doc = _groundDatabases[collection]._collection.findOne(mongoId);
-
           if (doc) {
             // document found
             // This is a problem: insert stub simulation, would fail so we
@@ -588,6 +585,41 @@ var _saveMethods = function() {
 
 /////////////////////// ADD TRIGGERS IN LIVEDATACONNECTION /////////////////////
 
+var _interceptGroundedDatabases = function(args) {
+  if (args[0]) {
+    var params = args[0].split('/');
+    var command = params[2];
+    var collection = params[1];
+
+    if (command === 'insert' || command === 'remove' ||
+            command === 'update') {
+      // We are in
+      if (collection && _groundDatabases[collection]) {
+        // This is a grounded database - ground
+        // prefix command with "ground"
+        //
+        console.log('INTERCEPT CALLS AND ADD SERVER TIMESTAMP');
+        if (command === 'insert') {
+          args[1][0]._serverTime = GroundDB.now();
+        }
+        if (command === 'update') {
+          args[1][1].$set = args[1][1].$set || {};
+          args[1][1].$set._serverTime = GroundDB.now();
+        }
+        if (command === 'remove') {
+       /*   _groundDatabases[collection]._collection.remove({
+            _id: args[1][0]._id
+          });
+*/          //args[0] = '/' + collection + '/ground:' + command;
+          args[1].push({ '_serverTime': GroundDB.now() });
+        }
+        console.log(args);
+      }
+    }
+  }
+  return args;
+};
+
 // Modify _LivedataConnection, well just minor
 _.extend(Meteor._LivedataConnection.prototype, {
   _super: {
@@ -598,8 +630,10 @@ _.extend(Meteor._LivedataConnection.prototype, {
   // Modify apply
   apply: function(/* arguments */) {
     var self = this;
+    // Intercept grounded databases
+    var args = _interceptGroundedDatabases(arguments);
     // Call super
-    self._super.apply.apply(self, arguments);
+    self._super.apply.apply(self, args);
     // Save methods
     _saveMethods();
   },
