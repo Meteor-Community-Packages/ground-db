@@ -100,6 +100,13 @@ It's possible to ground an allready existing `smartCollectin` on a `groundDB` eg
 ##Resume of outstanding methods
 Database changes and methods will be sent to the server just like normal. The methods are sent to server after relogin - this way `this.userId` isset when running on the server. In other words: `Just like normal`
 
+##Publish and subscription
+###Online
+Subscription behavior when using `GroundDB` - When online it's just like normal `Meteor` so nothing new. If you unsubscribe a collection you can still insert etc. but the data will not be visible on the client.
+###Offline
+When offline the data remains in the local database - since the publish is a server thing. Use the query selector for filtering unwanted data.
+*When reconnected the database will update client subscription and changes will be resumed*
+
 ##Events *- client-side*
 The event api is as follows:
 ```js
