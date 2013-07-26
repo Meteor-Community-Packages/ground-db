@@ -1,3 +1,9 @@
+Meteor.methods({
+  'getServerTime': function() {
+    return Date.now();
+  }
+});
+
 // @export GroundDB
 GroundDB = function(name, options) {
   // Inheritance Meteor Collection can be set by options.collection
@@ -21,6 +27,27 @@ GroundDB = function(name, options) {
         throw new Error('GroundDB got an invalid name or collection');
       }
     }
+  }
+
+  if (self.name !== null) {
+    var cursor = self.find({});
+    var handle = cursor.observeChanges({
+      added: function(id, fields) {
+        console.log('added ' + id);
+      },
+//      addedBefore: function(id, fields, before) {
+//        console.log('addedBefore ' + id);
+//      },
+      changed: function(id, fields) {
+        console.log('changed ' + id);
+      },
+      movedBefore: function(id, before) {
+        console.log('movedBefore ' + id);
+      },
+      removed: function(id) {
+        console.log('removed ' + id);
+      }
+    });
   }
 
   return self;

@@ -114,6 +114,34 @@ var OneTimeout = function() {
   };
 };
 
+////////////////////////// GET SERVER TIME DIFFERENCE ///////////////////////////
+
+var _serverTimeDiff = 0; // Time difference in ms
+
+if (storage) {
+  // Initialize the _serverTimeDiff
+  if (typeof storage.getItem(_prefixGroundDB + 'timeDiff') !== 'undefined') {
+    _serverTimeDiff = 1 * storage.getItem(_prefixGroundDB + 'timeDiff');
+  }
+  console.log('Server time difference: ' + _serverTimeDiff);
+  Meteor.startup(function() {
+    Meteor.call('getServerTime', function(error, result) {
+      if (!error) {
+        // Update our server time diff
+        _serverTimeDiff = result - Date.now();// - lag or/and timezone
+        storage.setItem(_prefixGroundDB + 'timeDiff', _serverTimeDiff);
+        console.log('Server time difference: ' + _serverTimeDiff);
+      }
+    }); // EO Server call
+  });
+}
+
+_getServerDate = {
+  now: function() {
+    return Date.now() + _serverTimeDiff;
+  }
+};
+
 //////////////////////////////// GROUND DATABASE ///////////////////////////////
 
 // Add a pointer register
@@ -287,13 +315,19 @@ window.GroundDB = function(name, options) {
     }
   };
 
+  var saveDatabaseDelay = new OneTimeout();
+
   // Observe all changes and rely on the less agressive reactive system for
   // providing a reasonable update frequens
   Deps.autorun(function() {
     // Observe changes
     self.find().fetch();
-    // Save on changes
-    self._saveDatabase();
+    if (!this.firstRun) {
+      // Save on changes
+      saveDatabaseDelay.oneTimeout(function() {
+        self._saveDatabase();
+      }, 150);
+    }
   });
 
   // Load the database as soon as possible
@@ -356,9 +390,9 @@ var _getMethodsList = function() {
 
   // Convert the data into nice array
   _.each(Meteor.default_connection._methodInvokers, function(method) {
-    if (method._message.method !== 'login') {
-      // Dont cache login calls - they are spawned pr. default when accounts
-      // are installed
+    if (method._message.method !== 'login' ||
+            method._message.method !== 'getServerTime') {
+      // Dont cache login or getServerTime calls - they are spawned pr. default
       methods.push({
         // Format the data
         method: method._message.method,
@@ -580,6 +614,7 @@ _.extend(Meteor._LivedataConnection.prototype, {
 });
 
 //////////////////////////// STARTUP METHODS RESUME ////////////////////////////
+
 Meteor.startup(function() {
   // Wait some not to conflict with accouts login
   // TODO: Do we have a better way, instead of depending on time should depend
