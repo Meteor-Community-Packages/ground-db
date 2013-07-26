@@ -84,6 +84,36 @@ var _loadObject = function(name) {
   return null;
 };
 
+/////////////////////////////// ONE TIME OUT ///////////////////////////////////
+
+// This utillity function allows us to run a function - but if its run before
+// time out delay then we stop and start a new timeout - delaying the execution
+// of the function - TODO: have an option for n number of allowed delays before
+// execution of timeout function limitNumberOfTimes
+var OneTimeout = function() {
+  var self = this;
+
+  self._id = null;
+
+  // Save the methods into the localstorage
+  self.oneTimeout = function(func, delay) {
+    self._count++;
+
+    if (self._id !== null) {
+      // Stop the current timeout - we have updates
+      Meteor.clearTimeout(self._id);
+    }
+
+    self._id = Meteor.setTimeout(function() {
+      // Ok, we reset reference and go to work
+      self._id = null;
+      // Run function
+      func();
+
+    }, delay);
+  };
+}
+
 //////////////////////////////// GROUND DATABASE ///////////////////////////////
 
 // Add a pointer register
@@ -367,32 +397,39 @@ var _getMethodUpdates = function(newMethods, clientMemory) {
   return result;
 };
 
+/////////////////////////// SYNC TABS METHODS DATABSE //////////////////////////
+
+var syncDatabaseDelay = new OneTimeout();
+
 // Offline client only databases will sync a bit different than normal
 // This function is a bit hard - but it works - optimal solution could be to
 // have virtual method calls it would complicate things
 var _syncDatabase = function(name) {
-  var collection = _groundDatabases[name];
-  if (collection && collection.offlineDatabase) {
-    // Hard reset database?
-    var newDocs = _loadObject('db.' + name);
-    collection.find().forEach(function(doc) {
-      // Remove document
-      collection._collection.remove(doc._id);
-      // If found in new documents then hard update
-      if (typeof newDocs[doc._id] !== 'undefined') {
-        // Update doc
-        collection._collection.insert(newDocs[doc._id]);
-        delete newDocs[doc._id];
-      }
-    });
-    _.each(newDocs, function (doc) {
-        // insert doc
-        collection._collection.insert(doc);
-    });
-  }
+  // We set a small delay in case of more updates within the wait
+  syncDatabaseDelay.oneTimeout(function() {
+    var collection = _groundDatabases[name];
+    if (collection && collection.offlineDatabase) {
+      // Hard reset database?
+      var newDocs = _loadObject('db.' + name);
+      collection.find().forEach(function(doc) {
+        // Remove document
+        collection._collection.remove(doc._id);
+        // If found in new documents then hard update
+        if (typeof newDocs[doc._id] !== 'undefined') {
+          // Update doc
+          collection._collection.insert(newDocs[doc._id]);
+          delete newDocs[doc._id];
+        }
+      });
+      _.each(newDocs, function (doc) {
+          // insert doc
+          collection._collection.insert(doc);
+      });
+    }
+  }, 150);
 };
 
-var _reloadTimeoutId = null;
+var syncMethodsDelay = new OneTimeout();
 
 // Syncronize tabs via method calls
 var _syncMethods = function() {
@@ -401,22 +438,15 @@ var _syncMethods = function() {
   // We are not master and the user is working on another tab, we are not in
   // a hurry to spam the browser with work, plus there are typically acouple
   // of db access required in most operations, we wait a sec?
-  if (_reloadTimeoutId !== null) {
-    // Stop the current timeout - we have updates
-    Meteor.clearTimeout(_reloadTimeoutId);
-  }
-
-  _reloadTimeoutId = Meteor.setTimeout(function() {
-    // Ok, we reset reference and go to work
-    _reloadTimeoutId = null;
-
+  syncMethodsDelay.oneTimeout(function() {
     // Resume methods
     _loadMethods();
-
     // Resume normal writes
     _isReloading = false;
-  }, 200);
+  }, 150);
 };
+
+///////////////////////////// LOAD & SAVE METHODS //////////////////////////////
 
 // load methods from localstorage and resume the methods
 var _loadMethods = function() {
@@ -502,14 +532,19 @@ var _loadMethods = function() {
   GroundDB.onResumeMethods();
 }; // EO load methods
 
+var saveMethodsDelay = new OneTimeout();
 
 // Save the methods into the localstorage
 var _saveMethods = function() {
   if (_methodsResumed) {
-    GroundDB.onCacheMethods();
+    // Ok memory is initialized
+    saveMethodsDelay.oneTimeout(function() {
+      // We could perhaps implement a wait to buffer up multiple writes into one?
+      GroundDB.onCacheMethods();
 
-    // Save outstanding methods to localstorage
-    _saveObject('methods', _getMethodsList());
+      // Save outstanding methods to localstorage
+      _saveObject('methods', _getMethodsList());
+    }, 150);
   }
 };
 
