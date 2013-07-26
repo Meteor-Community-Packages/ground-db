@@ -112,7 +112,7 @@ var OneTimeout = function() {
 
     }, delay);
   };
-}
+};
 
 //////////////////////////////// GROUND DATABASE ///////////////////////////////
 
@@ -331,7 +331,7 @@ GroundDB.onCacheMethods = function() {
 };
 
 GroundDB.onTabSync = function(type, key) {
-  console.log('Sync tabs - Cache is updated by: ' + type);
+  console.log('Sync tabs - Cache is updated by: ' + type + ((key)?key:''));
 };
 
 GroundDB.onCorruptedClientMemory = function() {
@@ -427,8 +427,8 @@ var _syncDatabase = function(name) {
         }
       });
       _.each(newDocs, function (doc) {
-          // insert doc
-          collection._collection.insert(doc);
+        // insert doc
+        collection._collection.insert(doc);
       });
     }
   }, 150);
@@ -478,7 +478,7 @@ var _loadMethods = function() {
       // TODO: would have been nicer if SmartCollection used same naming as
       // Meteor
       params = ''+params;
-      paramIndex = 0;
+      var paramIndex = 0;
       if (params === '_si_' || params === '_su_' || params === '_sr_') {
         // Get collection from SmartCollection call
         command = params;
@@ -516,13 +516,15 @@ var _loadMethods = function() {
             }
             if (command === '_sr_') {
               // param 0:id
-              _groundDatabases[collection]._collection.remove(method.args[paramIndex]);
+              _groundDatabases[collection]._collection.remove(
+                      method.args[paramIndex]);
             }
           } else { // EO Else no doc found in client database
             // Add tab support in SmartCollections
             // param 0:doc
             if (command === '_si_') {
-              _groundDatabases[collection]._collection.insert(method.args[paramIndex]);
+              _groundDatabases[collection]._collection.insert(
+                      method.args[paramIndex]);
             }
           }
         } // else collection would be a normal database
