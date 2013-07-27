@@ -53,13 +53,15 @@ GroundDB = function(name, options) {
     });
   }
 
+// When removed in offline - its not really removed due to the selecter
+
   var _super = {
     insert: Meteor.default_server.method_handlers['/'+self.name+'/insert'],
     update: Meteor.default_server.method_handlers['/'+self.name+'/update'],
     remove: Meteor.default_server.method_handlers['/'+self.name+'/remove']
   };
 
-  Meteor.default_server.method_handlers['/' + self.name + '/remove'] = function(selector, timestamp) {
+  Meteor.default_server.method_handlers['/' + self.name + '/remove'] = function(selector) {
     // Remove document??
     console.log('REMOVE OVERWRITE');
     self.remove(selector._id);

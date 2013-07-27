@@ -62,8 +62,7 @@ var _getGroundDBPrefix = function(suffix) {
 // save object into localstorage
 var _saveObject = function(name, object) {
   if (storage && _isReloading === false) {
-    var cachedDoc = EJSON.stringify(object);
-
+    var cachedDoc = minify(object);
     try {
       storage.setItem(_getGroundDBPrefix(name), cachedDoc);
     } catch (e) {
@@ -74,15 +73,25 @@ var _saveObject = function(name, object) {
 
 // get object from localstorage, retur null if not found
 var _loadObject = function(name) {
+  // If storage is supported
   if (storage) {
+    // Then load cached document
     var cachedDoc = storage.getItem(_getGroundDBPrefix(name));
-    if (cachedDoc && cachedDoc.length > 0 && cachedDoc !== 'undefined') {
-      var cachedDocObject = EJSON.parse(cachedDoc);
-      return cachedDocObject;
-    }
+    return maxify(cachedDoc);
   }
   return null;
 };
+
+////////////////////////// MINIMIZE & MAXIMIZE DOCUMENTS ///////////////////////
+
+var minify = function(bigDoc) {
+  return EJSON.stringify(bigDoc);
+};
+
+var maxify = function(smallDoc) {
+  return EJSON.parse(smallDoc);
+};
+
 
 /////////////////////////////// ONE TIME OUT ///////////////////////////////////
 
@@ -92,24 +101,23 @@ var _loadObject = function(name) {
 // execution of timeout function limitNumberOfTimes
 var OneTimeout = function() {
   var self = this;
-
+  // Pointer to Meteor.setTimeout
   self._id = null;
-
   // Save the methods into the localstorage
   self.oneTimeout = function(func, delay) {
     self._count++;
-
+    // If a timeout is in progress
     if (self._id !== null) {
-      // Stop the current timeout - we have updates
+      // then stop the current timeout - we have updates
       Meteor.clearTimeout(self._id);
     }
-
+    // Spawn new timeout
     self._id = Meteor.setTimeout(function() {
-      // Ok, we reset reference and go to work
+      // Ok, we reset reference so we dont get cleared and go to work
       self._id = null;
       // Run function
       func();
-
+      // Delay execution a bit
     }, delay);
   };
 };
@@ -120,17 +128,17 @@ var _serverTimeDiff = 0; // Time difference in ms
 
 if (storage) {
   // Initialize the _serverTimeDiff
-  if (typeof storage.getItem(_prefixGroundDB + 'timeDiff') !== 'undefined') {
-    _serverTimeDiff = 1 * storage.getItem(_prefixGroundDB + 'timeDiff');
-  }
-  console.log('Server time difference: ' + _serverTimeDiff);
+  _serverTimeDiff = (1 * storage.getItem(_prefixGroundDB + 'timeDiff')) || 0;
+  // At server startup we figure out the time difference between server and
+  // client time - this includes lag and timezone
   Meteor.startup(function() {
+    // Call the server method an get server time
     Meteor.call('getServerTime', function(error, result) {
       if (!error) {
         // Update our server time diff
         _serverTimeDiff = result - Date.now();// - lag or/and timezone
+        // Update the localstorage
         storage.setItem(_prefixGroundDB + 'timeDiff', _serverTimeDiff);
-        console.log('Server time difference: ' + _serverTimeDiff);
       }
     }); // EO Server call
   });
@@ -138,7 +146,7 @@ if (storage) {
 
 //////////////////////////////// GROUND DATABASE ///////////////////////////////
 
-// Add a pointer register
+// Add a pointer register of grounded databases
 var _groundDatabases = {};
 
 // @export GroundDB
@@ -177,11 +185,13 @@ window.GroundDB = function(name, options) {
   // We have an client-side only offline database
   if (self.name === null) {
     if (typeof options === 'string' && options !== '') {
-      // ok we have a named offline only database
+      // We have a mapped offline only database
       self.name = options;
     } else {
+      // No options set for mapping offline db
       self.name = 'null';
     }
+    // This is an offline database
     self.offlineDatabase = true;
   }
 
@@ -260,14 +270,16 @@ window.GroundDB = function(name, options) {
   }
   ///////// EO mongo-livedata/collection.js 153
 
+  // Flag true/false depending if database is loaded from local
   self._databaseLoaded = false;
 
   // We dont trust the localstorage so we make sure it doesn't contain
-  // duplicated id's
+  // duplicated id's - primary a problem i FF
   self._checkDocs = function(a) {
     var c = {};
     // We create c as an object with no duplicate _id's
     for (var i = 0, keys = Object.keys(a); i < keys.length; i++) {
+      // Extract key/value
       var key = keys[i];
       var doc = a[key];
       // set value in c
@@ -280,12 +292,12 @@ window.GroundDB = function(name, options) {
   self._loadDatabase = function() {
     // Then load the docs into minimongo
     GroundDB.onResumeDatabase(self.name);
-
     // Load object from localstorage
     var docs = _loadObject('db.' + self.name);
-
     // Initialize client documents
     _.each(self._checkDocs( (docs) ? docs : {} ), function(doc) {
+      // Test if document allready exists, this is a rare case but accounts
+      // sometimes adds data to the users database, eg. if "users" are grounded
       var exists = self._collection.findOne({ _id: doc._id });
       // If collection is populated before we get started then the data in
       // memory would be considered latest therefor we dont load from local
@@ -294,7 +306,19 @@ window.GroundDB = function(name, options) {
       }
     });
 
+    // Setting database loaded, this allows minimongo to be saved into local
     self._databaseLoaded = true;
+  };
+
+  // One timeout pointer for database saves
+  var saveDatabaseDelay = new OneTimeout();
+
+  // Use reactivity to trigger saves
+  var _gdb_datachanged = new Deps.Dependency();
+
+  // trigger change
+  var _gdb_databaseChanged = function() {
+    _gdb_datachanged.changed();
   };
 
   // Bulk Save database from memory to local, meant to be as slim, fast and
@@ -303,25 +327,30 @@ window.GroundDB = function(name, options) {
     // If data loaded from localstorage then its ok to save - otherwise we
     // would override with less data
     if (self._databaseLoaded) {
-      GroundDB.onCacheDatabase(self.name);
-      // Save the collection into localstorage
-      _saveObject('db.' + self.name, self._collection.docs);
+      saveDatabaseDelay.oneTimeout(function() {
+        // We delay the operation a bit in case of multiple saves - this creates
+        // a minor lag in terms of localstorage updating but it limits the num
+        // of saves to the database
+          // Make sure our database is loaded
+          GroundDB.onCacheDatabase(self.name);
+          // Save the collection into localstorage
+          _saveObject('db.' + self.name, self._collection.docs);
+      }, 150);
     }
   };
 
-  var saveDatabaseDelay = new OneTimeout();
-
-  // Observe all changes and rely on the less agressive reactive system for
+  // Observe all changes and rely on the less agressive observer system for
   // providing a reasonable update frequens
-  Deps.autorun(function() {
-    // Observe changes
-    self.find().fetch();
-    if (!this.firstRun) {
-      // Save on changes
-      saveDatabaseDelay.oneTimeout(function() {
-        self._saveDatabase();
-      }, 150);
-    }
+  var _gdb_handler = self.find().observe({
+    'added': _gdb_databaseChanged,
+    'changed': _gdb_databaseChanged,
+    'removed': _gdb_databaseChanged
+  });
+
+  // Run save database at data changes
+  Meteor.autorun(function() {
+    _gdb_datachanged.depend();
+    self._saveDatabase();
   });
 
   // Load the database as soon as possible
@@ -347,7 +376,7 @@ GroundDB.onResumeMethods = function() {
 };
 
 GroundDB.onMethodCall = function(methodCall) {
-  console.log('Method call ' + methodCall._message.method);
+  console.log('Method call ' + methodCall.method);
 };
 
 GroundDB.onCacheDatabase = function(name) {
@@ -364,12 +393,11 @@ GroundDB.onTabSync = function(type, key) {
 
 GroundDB.onCorruptedClientMemory = function() {
   // Let error be thrown an visible for 5sec then reload app
-  Meteor.setTimeout(function() {
-    window.location.reload();
-  }, 5000);
+//  Meteor.setTimeout(function() {
+//    window.location.reload();
+//  }, 5000);
   // Throw an error, cannot continue - This should never happen
-  throw new Error('Outstanding methods is corrupted in memory - '+
-          'Reloading app in 5sec');
+  throw new Error('Outstanding methods is corrupted in memory');
 };
 
 GroundDB.now = function() {
@@ -397,7 +425,6 @@ var _getMethodsList = function() {
         args: method._message.params,
         options: { wait: method._wait }
       });
-      GroundDB.onMethodCall(method);
     }
   });
   return methods;
@@ -420,11 +447,16 @@ var _getMethodUpdates = function(newMethods) {
         if (EJSON.stringify(oldMethods[i]) !== EJSON.stringify(newMethods[i])) {
           // The client data is corrupted, throw error or force the client to
           // reload, does not make sense to continue?
+          console.log('CORRUPTED---------------------------------------------');
+          console.log(EJSON.stringify(oldMethods[i]));
+          console.log(EJSON.stringify(newMethods[i]));
+          console.log('------------------------------------------------------');
           GroundDB.onCorruptedClientMemory();
         }
       } else {
         // Ok out of oldMethods this is a new method call
         result.push(newMethods[i]);
+        GroundDB.onMethodCall(newMethods[i]);
       }
     } // EO for iteration
   } // EO check newMethods
@@ -560,7 +592,7 @@ var _loadMethods = function() {
           }
         } // else collection would be a normal database
       } // EO collection work
-
+console.log(method);
       // Add method to connection
       Meteor.default_connection.apply(
               method.method, method.args, method.options);
@@ -585,41 +617,6 @@ var _saveMethods = function() {
 
 /////////////////////// ADD TRIGGERS IN LIVEDATACONNECTION /////////////////////
 
-var _interceptGroundedDatabases = function(args) {
-  if (args[0]) {
-    var params = args[0].split('/');
-    var command = params[2];
-    var collection = params[1];
-
-    if (command === 'insert' || command === 'remove' ||
-            command === 'update') {
-      // We are in
-      if (collection && _groundDatabases[collection]) {
-        // This is a grounded database - ground
-        // prefix command with "ground"
-        //
-        console.log('INTERCEPT CALLS AND ADD SERVER TIMESTAMP');
-        if (command === 'insert') {
-          args[1][0]._serverTime = GroundDB.now();
-        }
-        if (command === 'update') {
-          args[1][1].$set = args[1][1].$set || {};
-          args[1][1].$set._serverTime = GroundDB.now();
-        }
-        if (command === 'remove') {
-       /*   _groundDatabases[collection]._collection.remove({
-            _id: args[1][0]._id
-          });
-*/          //args[0] = '/' + collection + '/ground:' + command;
-          args[1][0]._serverTime = GroundDB.now();
-        }
-        console.log(args);
-      }
-    }
-  }
-  return args;
-};
-
 // Modify _LivedataConnection, well just minor
 _.extend(Meteor._LivedataConnection.prototype, {
   _super: {
@@ -631,9 +628,9 @@ _.extend(Meteor._LivedataConnection.prototype, {
   apply: function(/* arguments */) {
     var self = this;
     // Intercept grounded databases
-    var args = _interceptGroundedDatabases(arguments);
+  //  var args = _interceptGroundedDatabases(arguments);
     // Call super
-    self._super.apply.apply(self, args);
+    self._super.apply.apply(self, arguments);
     // Save methods
     _saveMethods();
   },
