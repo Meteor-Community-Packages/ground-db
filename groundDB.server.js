@@ -1,8 +1,15 @@
-Meteor.methods({
-  'getServerTime': function() {
-    return Date.now();
-  }
-});
+/*
+
+
+TODO:
+  `Meteor.default_server` - `Meteor.server`
+
+*/
+///////////////////////////////// TEST SCOPE ///////////////////////////////////
+
+Meteor.server = Meteor.server || Meteor.default_server;
+
+//////////////////////////////// GROUND DATABASE ///////////////////////////////
 
 // @export GroundDB
 GroundDB = function(name, options) {
@@ -77,10 +84,20 @@ GroundDB = function(name, options) {
   return self;
 };
 
+////////////////////////// GET SERVER TIME DIFFERENCE //////////////////////////
+
+Meteor.methods({
+  'getServerTime': function() {
+    return Date.now();
+  }
+});
+
 // Unify client / server api
 GroundDB.now = function() {
   return Date.now();
 };
+
+////////////////////////// TIMESTAMP CONFLICTHANDLER ///////////////////////////
 
 // TODO:
 // When clients make changes the server should track the documents from the

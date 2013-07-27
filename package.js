@@ -6,10 +6,25 @@ Package.describe({
   "\u001b[33m-------------------------------------RaiX\n"
 });
 
-Package.on_use(function (api, where) {
+Package.on_use(function (api) {
   "use strict";
-  api.use(['random', 'ejson'], 'client');
+  api.export('GroundDB');
+  api.export('_GroundDB', ['client', 'server'], {testOnly: true});
+  api.use(['meteor', 'underscore', 'deps', 'random', 'minimongo', 'ejson'],
+          ['client', 'server']);
+  api.use(['deps'], 'client');
+  //api.use([], 'server');
   //api.use(['localstorage', 'ejson'], 'client');
   api.add_files('groundDB.client.js', 'client');
   api.add_files('groundDB.server.js', 'server');
+});
+
+Package.on_test(function (api) {
+  api.use('groundDB', ['client']);
+  api.use('test-helpers', 'client');
+  api.use(['tinytest', 'underscore', 'ejson', 'ordered-dict',
+           'random', 'deps']);
+
+  api.add_files('groundDB.client.tests.js', 'client');
+  api.add_files('groundDB.server.tests.js', 'server');
 });

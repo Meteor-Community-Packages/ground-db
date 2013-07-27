@@ -13,12 +13,20 @@ When the app loads GroundDB resumes methods and database changes
 
 Regz. RaiX
 
-TODO:
-  `Meteor.default_connection` - `Meteor.connection`
-  `Meteor.default_server` - `Meteor.server`
-
 */
+///////////////////////////////// TEST SCOPE ///////////////////////////////////
 
+_GroundDB = {};
+
+// Map connection
+_GroundDB.connection = Meteor.connection || Meteor.default_connection;
+
+// Map parseId function
+_GroundDB.idParse = LocalCollection && LocalCollection._idParse ||
+        Meteor.idParse;
+
+// TODO: Remove
+window.Meteor = Meteor;
 ////////////////////////////// LOCALSTORAGE ////////////////////////////////////
 
 // Well, I'm still using console.log
@@ -153,9 +161,7 @@ if (storage) {
 // Add a pointer register of grounded databases
 var _groundDatabases = {};
 
-// @export GroundDB
-window.GroundDB = function(name, options) {
-// TODO: change when linker is official
+GroundDB = function(name, options) {
 
   // Inheritance Meteor Collection can be set by options.collection
   // Accepts smart collections by Arunoda Susiripala
@@ -217,7 +223,7 @@ window.GroundDB = function(name, options) {
       // We check that local loaded docs are removed before remote sync
       // otherwise it would throw an error
       if (msg.msg === 'added') {
-        var mongoId = Meteor.idParse(msg.id);
+        var mongoId = _GroundDB.idParse(msg.id);
         var doc = self._collection.findOne(mongoId);
         // If the doc allready found then we remove it
         if (doc) {
@@ -320,6 +326,9 @@ window.GroundDB = function(name, options) {
   return self;
 };
 
+// TODO: change when linker is official
+window.GroundDB = GroundDB;
+
 ///////////////////////////////// EVENTS ///////////////////////////////////////
 
 // This is an overridable method for hooking on to the GroundDB events
@@ -367,7 +376,7 @@ var _getMethodsList = function() {
   var methods = [];
   var skipThisMethod = { login: true, getServerTime: true };
   // Convert the data into nice array
-  _.each(Meteor.default_connection._methodInvokers, function(method) {
+  _.each(_GroundDB.connection._methodInvokers, function(method) {
     if (!skipThisMethod[method._message.method]) {
       // Dont cache login or getServerTime calls - they are spawned pr. default
       methods.push({
@@ -450,7 +459,7 @@ var _loadMethods = function() {
         // since we are running local, so we remove it from the collection first
         if (_groundDatabases[collection]) {
           // The database is registered as a ground database
-          var mongoId = Meteor.idParse((method.args && method.args[paramIndex])?
+          var mongoId = _GroundDB.idParse((method.args && method.args[paramIndex])?
                   method.args[paramIndex]._id || method.args[paramIndex]:'');
 
           // Get the document on the client - if found
@@ -487,7 +496,7 @@ var _loadMethods = function() {
         } // else collection would be a normal database
       } // EO collection work
       // Add method to connection
-      Meteor.default_connection.apply(
+      _GroundDB.connection.apply(
               method.method, method.args, method.options);
     } // EO while methods
   } // EO if stored outstanding methods
@@ -574,13 +583,13 @@ var _syncMethods = function() {
 
 /////////////////////// ADD TRIGGERS IN LIVEDATACONNECTION /////////////////////
 
-// Modify _LivedataConnection, well just minor
-_.extend(Meteor._LivedataConnection.prototype, {
+// Modify connection, well just minor
+_.extend(_GroundDB.connection, {
   // Define a new super for the methods
   _gdbSuper: {
-    apply: Meteor._LivedataConnection.prototype.apply,
+    apply: _GroundDB.connection.apply,
     _outstandingMethodFinished:
-    Meteor._LivedataConnection.prototype._outstandingMethodFinished
+    _GroundDB.connection._outstandingMethodFinished
   },
   // Modify apply
   apply: function(/* arguments */) {
