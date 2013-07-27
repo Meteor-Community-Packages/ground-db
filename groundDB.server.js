@@ -32,42 +32,47 @@ GroundDB = function(name, options) {
   // Initialize collection name
   self.name = (self.name)? self.name : self._name;
 
-  if (self.name !== null) {
-    var cursor = self.find({});
-    var handle = cursor.observeChanges({
-      added: function(id, fields) {
-        console.log('added ' + id);
-      },
-//      addedBefore: function(id, fields, before) {
-//        console.log('addedBefore ' + id);
-//      },
-      changed: function(id, fields) {
-        console.log('changed ' + id);
-      },
-      movedBefore: function(id, before) {
-        console.log('movedBefore ' + id);
-      },
-      removed: function(id) {
-        console.log('removed ' + id);
-      }
-    });
-  }
-
-// When removed in offline - its not really removed due to the selecter
-
-  var _super = {
-    insert: Meteor.default_server.method_handlers['/'+self.name+'/insert'],
-    update: Meteor.default_server.method_handlers['/'+self.name+'/update'],
-    remove: Meteor.default_server.method_handlers['/'+self.name+'/remove']
+  // This is the basic interface allowing users easily access for handling
+  // method calls, this.super() is the super and this.collection is self
+  // TODO: Remove this section to the README
+  self.conflictHandlers = (options && options.conflictHandlers)?
+        options.conflictHandlers: {
+    'insert': function(doc) {
+      console.log('insert');
+      console.log(doc);
+      this.super(doc);
+    },
+    'update': function(id, modifier) {
+      console.log('update');
+      console.log(id);
+      console.log(modifier);
+      this.super(id, modifier);
+    },
+    'remove': function(id) {
+      console.log('remove');
+      console.log(id);
+      this.super(id);
+    }
   };
 
-  Meteor.default_server.method_handlers['/' + self.name + '/remove'] = function(selector) {
-    // Remove document??
-    console.log('REMOVE OVERWRITE');
-    self.remove(selector._id);
-    console.log(selector);
-    console.log(selector._serverTime);
-  };
+  // Create overwrite interface
+  _.each(['insert', 'update', 'remove'], function(name) {
+    // TODO: init default conflict handlers
+    //self.conflictHandlers[name] = function() {
+    //  this.super.apply(this, arguments);
+    //};
+
+    // Save super
+    var _super = Meteor.default_server.method_handlers['/'+self.name+'/'+name];
+    // Overwrite
+    Meteor.default_server.method_handlers['/'+self.name+'/'+name] = function() {
+      var _this = this;
+      _this.collection = self;
+      _this.super = _super;
+      // Call the conflicthandlers
+      self.conflictHandlers[name].apply(_this, arguments);
+    };
+  });
 
   return self;
 };

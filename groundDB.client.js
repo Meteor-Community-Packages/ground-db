@@ -156,6 +156,7 @@ window.GroundDB = function(name, options) {
   // Inheritance Meteor Collection can be set by options.collection
   // Accepts smart collections by Arunoda Susiripala
   var self;
+
   // If name is string or null then assume a normal Meteor.Collection
   if (name === ''+name || name === null || typeof name === 'undefined') {
     // We instanciate a new meteor collection, let it handle undefined
@@ -195,80 +196,36 @@ window.GroundDB = function(name, options) {
     self.offlineDatabase = true;
   }
 
+  /////// Finally got a name... and rigged
+
   // Add to pointer register
   _groundDatabases[ self.name ] = self;
 
-  // We have to overwrite the standard Meteor code - It throws an Error when
-  // Documents allready in the docs. So we handle the conflict instead...
-  // TODO: Could this be cleaned up?
-  ////////// BEGIN mongo-livedata/collection.js 103
-  if (self._connection && self._connection._stores[ self.name ]) {
-    self._connection._stores[ self.name ].update = function (msg) {
-      var mongoId = Meteor.idParse(msg.id);
-      var doc = self._collection.findOne(mongoId);
-      // Is this a "replace the whole doc" message coming from the quiescence
-      // of method writes to an object? (Note that 'undefined' is a valid
-      // value meaning "remove it".)
-      if (msg.msg === 'replace') {
-        var replace = msg.replace;
-        if (!replace) {
-          if (doc) {
-            self._collection.remove(mongoId);
-          }
-        } else if (!doc) {
-          self._collection.insert(replace);
-        } else {
-          // XXX check that replace has no $ ops
-          self._collection.update(mongoId, replace);
-        }
-        return;
-      } else if (msg.msg === 'added') {
+  // prefixed supers container
+  self.gdbSuper = {};
 
+  // Overwrite the store update
+  if (self._connection && self._connection._stores[ self.name ]) {
+    // Set super
+    self.gdbSuper.storeUpdate = self._connection._stores[ self.name ].update;
+    // Overwrite
+    self._connection._stores[ self.name ].update = function (msg) {
+      // We check that local loaded docs are removed before remote sync
+      // otherwise it would throw an error
+      if (msg.msg === 'added') {
+        var mongoId = Meteor.idParse(msg.id);
+        var doc = self._collection.findOne(mongoId);
+        // If the doc allready found then we remove it
         if (doc) {
           // Solve the conflict - server wins
           // Then remove the client document
           self._collection.remove(doc._id);
         }
-        // And insert the server document
-        self._collection.insert(_.extend({_id: mongoId}, msg.fields));
-
-      } else if (msg.msg === 'removed') {
-        if (doc) {
-          // doc found - remove it
-          self._collection.remove(mongoId);
-        } else {
-          throw new Error("Expected to find a document present for removed");
-        }
-
-      } else if (msg.msg === 'changed') {
-        if (!doc) {
-          throw new Error("Expected to find a document to change: " + mongoId);
-        } else {
-          if (!_.isEmpty(msg.fields)) {
-            var modifier = {};
-            _.each(msg.fields, function (value, key) {
-              if (value === undefined) {
-                if (!modifier.$unset) {
-                  modifier.$unset = {};
-                }
-                modifier.$unset[key] = 1;
-              } else {
-                if (!modifier.$set) {
-                  modifier.$set = {};
-                }
-                modifier.$set[key] = value;
-              }
-            });
-            self._collection.update(mongoId, modifier);
-          }
-        }
-      } else {
-        throw new Error("I don't know how to deal with this message");
       }
-
+      // Call super and let it do its thing
+      self.gdbSuper.storeUpdate(msg);
     };
   }
-  ///////// EO mongo-livedata/collection.js 153
 
   // Flag true/false depending if database is loaded from local
   self._databaseLoaded = false;
@@ -314,11 +271,11 @@ window.GroundDB = function(name, options) {
   var saveDatabaseDelay = new OneTimeout();
 
   // Use reactivity to trigger saves
-  var _gdb_datachanged = new Deps.Dependency();
+  var _gdbDataChanged = new Deps.Dependency();
 
   // trigger change
-  var _gdb_databaseChanged = function() {
-    _gdb_datachanged.changed();
+  var _gdbDatabaseChanged = function() {
+    _gdbDataChanged.changed();
   };
 
   // Bulk Save database from memory to local, meant to be as slim, fast and
@@ -331,25 +288,25 @@ window.GroundDB = function(name, options) {
         // We delay the operation a bit in case of multiple saves - this creates
         // a minor lag in terms of localstorage updating but it limits the num
         // of saves to the database
-          // Make sure our database is loaded
-          GroundDB.onCacheDatabase(self.name);
-          // Save the collection into localstorage
-          _saveObject('db.' + self.name, self._collection.docs);
+        // Make sure our database is loaded
+        GroundDB.onCacheDatabase(self.name);
+        // Save the collection into localstorage
+        _saveObject('db.' + self.name, self._collection.docs);
       }, 150);
     }
   };
 
   // Observe all changes and rely on the less agressive observer system for
   // providing a reasonable update frequens
-  var _gdb_handler = self.find().observe({
-    'added': _gdb_databaseChanged,
-    'changed': _gdb_databaseChanged,
-    'removed': _gdb_databaseChanged
+  self.find().observe({
+    'added': _gdbDatabaseChanged,
+    'changed': _gdbDatabaseChanged,
+    'removed': _gdbDatabaseChanged
   });
 
   // Run save database at data changes
   Meteor.autorun(function() {
-    _gdb_datachanged.depend();
+    _gdbDataChanged.depend();
     self._saveDatabase();
   });
 
@@ -391,15 +348,6 @@ GroundDB.onTabSync = function(type, key) {
   console.log('Sync tabs - Cache is updated by: ' + type + ((key)?key:''));
 };
 
-GroundDB.onCorruptedClientMemory = function() {
-  // Let error be thrown an visible for 5sec then reload app
-//  Meteor.setTimeout(function() {
-//    window.location.reload();
-//  }, 5000);
-  // Throw an error, cannot continue - This should never happen
-  throw new Error('Outstanding methods is corrupted in memory');
-};
-
 GroundDB.now = function() {
   return Date.now() + _serverTimeDiff;
 };
@@ -413,11 +361,10 @@ var _methodsResumed = false;
 var _getMethodsList = function() {
   // Array of outstanding methods
   var methods = [];
-
+  var skipThisMethod = { login: true, getServerTime: true };
   // Convert the data into nice array
   _.each(Meteor.default_connection._methodInvokers, function(method) {
-    if (method._message.method !== 'login' ||
-            method._message.method !== 'getServerTime') {
+    if (!skipThisMethod[method._message.method]) {
       // Dont cache login or getServerTime calls - they are spawned pr. default
       methods.push({
         // Format the data
@@ -448,10 +395,10 @@ var _getMethodUpdates = function(newMethods) {
           // The client data is corrupted, throw error or force the client to
           // reload, does not make sense to continue?
           console.log('CORRUPTED---------------------------------------------');
-          console.log(EJSON.stringify(oldMethods[i]));
-          console.log(EJSON.stringify(newMethods[i]));
+          console.log('mem: '+EJSON.stringify(oldMethods[i]));
+          console.log('new: '+EJSON.stringify(newMethods[i]));
           console.log('------------------------------------------------------');
-          GroundDB.onCorruptedClientMemory();
+          throw new Error('The method database is corrupted or out of sync');
         }
       } else {
         // Ok out of oldMethods this is a new method call
@@ -462,59 +409,6 @@ var _getMethodUpdates = function(newMethods) {
   } // EO check newMethods
   // return the result
   return result;
-};
-
-/////////////////////////// SYNC TABS METHODS DATABSE //////////////////////////
-
-var syncDatabaseDelay = new OneTimeout();
-
-// Offline client only databases will sync a bit different than normal
-// This function is a bit hard - but it works - optimal solution could be to
-// have virtual method calls it would complicate things
-var _syncDatabase = function(name) {
-  // We set a small delay in case of more updates within the wait
-  syncDatabaseDelay.oneTimeout(function() {
-    var collection = _groundDatabases[name];
-    if (collection && collection.offlineDatabase === true) {
-      // Add event hook
-      GroundDB.onTabSync('database', name);
-      // Hard reset database?
-      var newDocs = _loadObject('db.' + name);
-      collection.find().forEach(function(doc) {
-        // Remove document
-        collection._collection.remove(doc._id);
-        // If found in new documents then hard update
-        if (typeof newDocs[doc._id] !== 'undefined') {
-          // Update doc
-          collection._collection.insert(newDocs[doc._id]);
-          delete newDocs[doc._id];
-        }
-      });
-      _.each(newDocs, function (doc) {
-        // insert doc
-        collection._collection.insert(doc);
-      });
-    }
-  }, 150);
-};
-
-var syncMethodsDelay = new OneTimeout();
-
-// Syncronize tabs via method calls
-var _syncMethods = function() {
-  // We are going to into reload, stop all access to localstorage
-  _isReloading = true;
-  // We are not master and the user is working on another tab, we are not in
-  // a hurry to spam the browser with work, plus there are typically acouple
-  // of db access required in most operations, we wait a sec?
-  syncMethodsDelay.oneTimeout(function() {
-    // Add event hook
-    GroundDB.onTabSync('methods');
-    // Resume methods
-    _loadMethods();
-    // Resume normal writes
-    _isReloading = false;
-  }, 150);
 };
 
 ///////////////////////////// LOAD & SAVE METHODS //////////////////////////////
@@ -529,6 +423,7 @@ var _loadMethods = function() {
 
   // If any methods outstanding
   if (methods) {
+console.log(methods.length);
     // Iterate over array of methods
     //_.each(methods, function(method) {
     while (methods.length > 0) {
@@ -615,11 +510,76 @@ var _saveMethods = function() {
   }
 };
 
+//////////////////////////// STARTUP METHODS RESUME ////////////////////////////
+
+Meteor.startup(function() {
+  // Wait some not to conflict with accouts login
+  // TODO: Do we have a better way, instead of depending on time should depend
+  // on en event.
+  Meteor.setTimeout(function() {
+    _loadMethods();
+  }, 500);
+});
+
+/////////////////////////// SYNC TABS METHODS DATABSE //////////////////////////
+
+var syncDatabaseDelay = new OneTimeout();
+
+// Offline client only databases will sync a bit different than normal
+// This function is a bit hard - but it works - optimal solution could be to
+// have virtual method calls it would complicate things
+var _syncDatabase = function(name) {
+  // We set a small delay in case of more updates within the wait
+  syncDatabaseDelay.oneTimeout(function() {
+    var collection = _groundDatabases[name];
+    if (collection && collection.offlineDatabase === true) {
+      // Add event hook
+      GroundDB.onTabSync('database', name);
+      // Hard reset database?
+      var newDocs = _loadObject('db.' + name);
+      collection.find().forEach(function(doc) {
+        // Remove document
+        collection._collection.remove(doc._id);
+        // If found in new documents then hard update
+        if (typeof newDocs[doc._id] !== 'undefined') {
+          // Update doc
+          collection._collection.insert(newDocs[doc._id]);
+          delete newDocs[doc._id];
+        }
+      });
+      _.each(newDocs, function (doc) {
+        // insert doc
+        collection._collection.insert(doc);
+      });
+    }
+  }, 150);
+};
+
+var syncMethodsDelay = new OneTimeout();
+
+// Syncronize tabs via method calls
+var _syncMethods = function() {
+  // We are going to into reload, stop all access to localstorage
+  _isReloading = true;
+  // We are not master and the user is working on another tab, we are not in
+  // a hurry to spam the browser with work, plus there are typically acouple
+  // of db access required in most operations, we wait a sec?
+  syncMethodsDelay.oneTimeout(function() {
+    // Add event hook
+    GroundDB.onTabSync('methods');
+    // Resume methods
+    _loadMethods();
+    // Resume normal writes
+    _isReloading = false;
+  }, 150);
+};
+
 /////////////////////// ADD TRIGGERS IN LIVEDATACONNECTION /////////////////////
 
 // Modify _LivedataConnection, well just minor
 _.extend(Meteor._LivedataConnection.prototype, {
-  _super: {
+  // Define a new super for the methods
+  _gdbSuper: {
     apply: Meteor._LivedataConnection.prototype.apply,
     _outstandingMethodFinished:
     Meteor._LivedataConnection.prototype._outstandingMethodFinished
@@ -630,7 +590,7 @@ _.extend(Meteor._LivedataConnection.prototype, {
     // Intercept grounded databases
   //  var args = _interceptGroundedDatabases(arguments);
     // Call super
-    self._super.apply.apply(self, arguments);
+    self._gdbSuper.apply.apply(self, arguments);
     // Save methods
     _saveMethods();
   },
@@ -638,21 +598,10 @@ _.extend(Meteor._LivedataConnection.prototype, {
   _outstandingMethodFinished: function() {
     var self = this;
     // Call super
-    self._super._outstandingMethodFinished.apply(self);
+    self._gdbSuper._outstandingMethodFinished.apply(self);
     // We save current status of methods
     _saveMethods();
   }
-});
-
-//////////////////////////// STARTUP METHODS RESUME ////////////////////////////
-
-Meteor.startup(function() {
-  // Wait some not to conflict with accouts login
-  // TODO: Do we have a better way, instead of depending on time should depend
-  // on en event.
-  Meteor.setTimeout(function() {
-    _loadMethods();
-  }, 500);
 });
 
 /////////////////////// LOAD CHANGES FROM OTHER TABS ///////////////////////////
