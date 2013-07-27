@@ -13,6 +13,10 @@ When the app loads GroundDB resumes methods and database changes
 
 Regz. RaiX
 
+TODO:
+  `Meteor.default_connection` - `Meteor.connection`
+  `Meteor.default_server` - `Meteor.server`
+
 */
 
 ////////////////////////////// LOCALSTORAGE ////////////////////////////////////
@@ -292,7 +296,7 @@ window.GroundDB = function(name, options) {
         GroundDB.onCacheDatabase(self.name);
         // Save the collection into localstorage
         _saveObject('db.' + self.name, self._collection.docs);
-      }, 150);
+      }, 200);
     }
   };
 
@@ -394,10 +398,6 @@ var _getMethodUpdates = function(newMethods) {
         if (EJSON.stringify(oldMethods[i]) !== EJSON.stringify(newMethods[i])) {
           // The client data is corrupted, throw error or force the client to
           // reload, does not make sense to continue?
-          console.log('CORRUPTED---------------------------------------------');
-          console.log('mem: '+EJSON.stringify(oldMethods[i]));
-          console.log('new: '+EJSON.stringify(newMethods[i]));
-          console.log('------------------------------------------------------');
           throw new Error('The method database is corrupted or out of sync');
         }
       } else {
@@ -423,7 +423,6 @@ var _loadMethods = function() {
 
   // If any methods outstanding
   if (methods) {
-console.log(methods.length);
     // Iterate over array of methods
     //_.each(methods, function(method) {
     while (methods.length > 0) {
@@ -487,7 +486,6 @@ console.log(methods.length);
           }
         } // else collection would be a normal database
       } // EO collection work
-console.log(method);
       // Add method to connection
       Meteor.default_connection.apply(
               method.method, method.args, method.options);
