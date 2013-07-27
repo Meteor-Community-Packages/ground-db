@@ -9,7 +9,7 @@ Package.describe({
 Package.on_use(function (api) {
   "use strict";
   api.export('GroundDB');
-  api.export('_GroundDB', ['client', 'server'], {testOnly: true});
+  api.export('_gDB', ['client', 'server'], {testOnly: true});
   api.use(['meteor', 'underscore', 'deps', 'random', 'minimongo', 'ejson'],
           ['client', 'server']);
   api.use(['deps'], 'client');

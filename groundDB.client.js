@@ -16,13 +16,13 @@ Regz. RaiX
 */
 ///////////////////////////////// TEST SCOPE ///////////////////////////////////
 
-_GroundDB = {};
+_gDB = {};
 
 // Map connection
-_GroundDB.connection = Meteor.connection || Meteor.default_connection;
+_gDB.connection = Meteor.connection || Meteor.default_connection;
 
 // Map parseId function
-_GroundDB.idParse = LocalCollection && LocalCollection._idParse ||
+_gDB.idParse = LocalCollection && LocalCollection._idParse ||
         Meteor.idParse;
 
 // TODO: Remove
@@ -41,7 +41,7 @@ var _isReloading = false;
 // Returns the localstorage if its found and working
 // TODO: check if this works in IE
 // could use Meteor._localStorage - just needs a rewrite
-var _storage = function() {
+_gDB._storage = function() {
   var storage,
       fail,
       uid;
@@ -59,24 +59,24 @@ var _storage = function() {
 };
 
 // get our storage if found
-var storage = _storage();
+_gDB.storage = _gDB._storage();
 
-var _prefixGroundDB = 'groundDB.';
+_gDB._prefix = 'groundDB.';
 
 // Add a correct prefix for groundDB
-var _getGroundDBPrefix = function(suffix) {
+_gDB._getGroundDBPrefix = function(suffix) {
   // Should we support multiple users on multiple tabs namespacing data
   // in localstorage by current userId?
   //return prefix + ((Meteor.userId())?Meteor.userId()+'.':'') + suffix;
-  return _prefixGroundDB + suffix;
+  return _gDB._prefix + suffix;
 };
 
 // save object into localstorage
-var _saveObject = function(name, object) {
-  if (storage && _isReloading === false) {
-    var cachedDoc = minify(object);
+_gDB._saveObject = function(name, object) {
+  if (_gDB.storage && _isReloading === false) {
+    var cachedDoc = _gDB.minify(object);
     try {
-      storage.setItem(_getGroundDBPrefix(name), cachedDoc);
+      _gDB.storage.setItem(_gDB._getGroundDBPrefix(name), cachedDoc);
     } catch (e) {
       GroundDB.onQuotaExceeded();
     }
@@ -84,23 +84,23 @@ var _saveObject = function(name, object) {
 };
 
 // get object from localstorage, retur null if not found
-var _loadObject = function(name) {
+_gDB._loadObject = function(name) {
   // If storage is supported
-  if (storage) {
+  if (_gDB.storage) {
     // Then load cached document
-    var cachedDoc = storage.getItem(_getGroundDBPrefix(name));
-    return maxify(cachedDoc);
+    var cachedDoc = _gDB.storage.getItem(_gDB._getGroundDBPrefix(name));
+    return _gDB.maxify(cachedDoc);
   }
   return null;
 };
 
 ////////////////////////// MINIMIZE & MAXIMIZE DOCUMENTS ///////////////////////
 
-var minify = function(bigDoc) {
+_gDB.minify = function(bigDoc) {
   return EJSON.stringify(bigDoc);
 };
 
-var maxify = function(smallDoc) {
+_gDB.maxify = function(smallDoc) {
   return EJSON.parse(smallDoc);
 };
 
@@ -111,7 +111,7 @@ var maxify = function(smallDoc) {
 // time out delay then we stop and start a new timeout - delaying the execution
 // of the function - TODO: have an option for n number of allowed delays before
 // execution of timeout function limitNumberOfTimes
-var OneTimeout = function() {
+_gDB.OneTimeout = function() {
   var self = this;
   // Pointer to Meteor.setTimeout
   self._id = null;
@@ -136,11 +136,11 @@ var OneTimeout = function() {
 
 ////////////////////////// GET SERVER TIME DIFFERENCE //////////////////////////
 
-var _serverTimeDiff = 0; // Time difference in ms
+_gDB._serverTimeDiff = 0; // Time difference in ms
 
-if (storage) {
-  // Initialize the _serverTimeDiff
-  _serverTimeDiff = (1 * storage.getItem(_prefixGroundDB + 'timeDiff')) || 0;
+if (_gDB.storage) {
+  // Initialize the _gDB._serverTimeDiff
+  _gDB._serverTimeDiff = (1*_gDB.storage.getItem(_gDB._prefix+'timeDiff')) || 0;
   // At server startup we figure out the time difference between server and
   // client time - this includes lag and timezone
   Meteor.startup(function() {
@@ -148,9 +148,9 @@ if (storage) {
     Meteor.call('getServerTime', function(error, result) {
       if (!error) {
         // Update our server time diff
-        _serverTimeDiff = result - Date.now();// - lag or/and timezone
+        _gDB._serverTimeDiff = result - Date.now();// - lag or/and timezone
         // Update the localstorage
-        storage.setItem(_prefixGroundDB + 'timeDiff', _serverTimeDiff);
+        _gDB.storage.setItem(_gDB._prefix + 'timeDiff', _gDB._serverTimeDiff);
       }
     }); // EO Server call
   });
@@ -159,7 +159,7 @@ if (storage) {
 //////////////////////////////// GROUND DATABASE ///////////////////////////////
 
 // Add a pointer register of grounded databases
-var _groundDatabases = {};
+_gDB._groundDatabases = {};
 
 GroundDB = function(name, options) {
 
@@ -209,7 +209,7 @@ GroundDB = function(name, options) {
   /////// Finally got a name... and rigged
 
   // Add to pointer register
-  _groundDatabases[ self.name ] = self;
+  _gDB._groundDatabases[ self.name ] = self;
 
   // prefixed supers container
   self.gdbSuper = {};
@@ -223,7 +223,7 @@ GroundDB = function(name, options) {
       // We check that local loaded docs are removed before remote sync
       // otherwise it would throw an error
       if (msg.msg === 'added') {
-        var mongoId = _GroundDB.idParse(msg.id);
+        var mongoId = _gDB.idParse(msg.id);
         var doc = self._collection.findOne(mongoId);
         // If the doc allready found then we remove it
         if (doc) {
@@ -260,7 +260,7 @@ GroundDB = function(name, options) {
     // Then load the docs into minimongo
     GroundDB.onResumeDatabase(self.name);
     // Load object from localstorage
-    var docs = _loadObject('db.' + self.name);
+    var docs = _gDB._loadObject('db.' + self.name);
     // Initialize client documents
     _.each(self._checkDocs( (docs) ? docs : {} ), function(doc) {
       // Test if document allready exists, this is a rare case but accounts
@@ -278,7 +278,7 @@ GroundDB = function(name, options) {
   };
 
   // One timeout pointer for database saves
-  var saveDatabaseDelay = new OneTimeout();
+  var saveDatabaseDelay = new _gDB.OneTimeout();
 
   // Use reactivity to trigger saves
   var _gdbDataChanged = new Deps.Dependency();
@@ -301,7 +301,7 @@ GroundDB = function(name, options) {
         // Make sure our database is loaded
         GroundDB.onCacheDatabase(self.name);
         // Save the collection into localstorage
-        _saveObject('db.' + self.name, self._collection.docs);
+        _gDB._saveObject('db.' + self.name, self._collection.docs);
       }, 200);
     }
   };
@@ -362,21 +362,21 @@ GroundDB.onTabSync = function(type, key) {
 };
 
 GroundDB.now = function() {
-  return Date.now() + _serverTimeDiff;
+  return Date.now() + _gDB._serverTimeDiff;
 };
 
 ///////////////////////////// RESUME METHODS ///////////////////////////////////
 
 // Is methods resumed?
-var _methodsResumed = false;
+_gDB._methodsResumed = false;
 
 // Get a nice array of current methods
-var _getMethodsList = function() {
+_gDB._getMethodsList = function() {
   // Array of outstanding methods
   var methods = [];
   var skipThisMethod = { login: true, getServerTime: true };
   // Convert the data into nice array
-  _.each(_GroundDB.connection._methodInvokers, function(method) {
+  _.each(_gDB.connection._methodInvokers, function(method) {
     if (!skipThisMethod[method._message.method]) {
       // Dont cache login or getServerTime calls - they are spawned pr. default
       methods.push({
@@ -391,13 +391,13 @@ var _getMethodsList = function() {
 };
 
 // Extract only newly added methods from localstorage
-var _getMethodUpdates = function(newMethods) {
+_gDB._getMethodUpdates = function(newMethods) {
   var result = [];
   if (newMethods && newMethods.length > 0) {
     // Get the old methods allready in memory
     // We could have done an optimized slice version or just starting at
     // oldMethods.length, but this tab is not in focus
-    var oldMethods = _getMethodsList();
+    var oldMethods = _gDB._getMethodsList();
     // Iterate over the new methods, old ones should be ordered in beginning of
     // newMethods we do a simple test an throw an error if thats not the case
     for (var i=0; i < newMethods.length; i++) {
@@ -423,12 +423,12 @@ var _getMethodUpdates = function(newMethods) {
 ///////////////////////////// LOAD & SAVE METHODS //////////////////////////////
 
 // load methods from localstorage and resume the methods
-var _loadMethods = function() {
+_gDB._loadMethods = function() {
   // Load methods from local
-  var methods = _loadObject('methods');
+  var methods = _gDB._loadObject('methods');
 
   // We are only going to submit the diff
-  methods = _getMethodUpdates(methods);
+  methods = _gDB._getMethodUpdates(methods);
 
   // If any methods outstanding
   if (methods) {
@@ -457,13 +457,13 @@ var _loadMethods = function() {
       if (collection !== '') {
         // we are going to run an simulated insert - this is allready in db
         // since we are running local, so we remove it from the collection first
-        if (_groundDatabases[collection]) {
+        if (_gDB._groundDatabases[collection]) {
           // The database is registered as a ground database
-          var mongoId = _GroundDB.idParse((method.args && method.args[paramIndex])?
+          var mongoId = _gDB.idParse((method.args && method.args[paramIndex])?
                   method.args[paramIndex]._id || method.args[paramIndex]:'');
 
           // Get the document on the client - if found
-          var doc = _groundDatabases[collection]._collection.findOne(mongoId);
+          var doc = _gDB._groundDatabases[collection]._collection.findOne(mongoId);
           if (doc) {
             // document found
             // This is a problem: insert stub simulation, would fail so we
@@ -472,48 +472,48 @@ var _loadMethods = function() {
             if (command === 'insert') {
               // Remove the item from ground database so it can be correctly
               // inserted
-              _groundDatabases[collection]._collection.remove(mongoId);
+              _gDB._groundDatabases[collection]._collection.remove(mongoId);
             } // EO handle insert
             // Add tab support in SmartCollections
             if (command === '_su_') { // TODO: Warn if using $inc or $dec?
               // params 0:id 1:modif
-              _groundDatabases[collection]._collection.update({ _id: mongoId },
+              _gDB._groundDatabases[collection]._collection.update({ _id: mongoId },
                       method.args[paramIndex+1]);
             }
             if (command === '_sr_') {
               // param 0:id
-              _groundDatabases[collection]._collection.remove(
+              _gDB._groundDatabases[collection]._collection.remove(
                       method.args[paramIndex]);
             }
           } else { // EO Else no doc found in client database
             // Add tab support in SmartCollections
             // param 0:doc
             if (command === '_si_') {
-              _groundDatabases[collection]._collection.insert(
+              _gDB._groundDatabases[collection]._collection.insert(
                       method.args[paramIndex]);
             }
           }
         } // else collection would be a normal database
       } // EO collection work
       // Add method to connection
-      _GroundDB.connection.apply(
+      _gDB.connection.apply(
               method.method, method.args, method.options);
     } // EO while methods
   } // EO if stored outstanding methods
 
   // Dispatch methods loaded event
-  _methodsResumed = true;
+  _gDB._methodsResumed = true;
   GroundDB.onResumeMethods();
 }; // EO load methods
 
 // Save the methods into the localstorage
-var _saveMethods = function() {
-  if (_methodsResumed) {
+_gDB._saveMethods = function() {
+  if (_gDB._methodsResumed) {
     // Ok memory is initialized
     GroundDB.onCacheMethods();
 
     // Save outstanding methods to localstorage
-    _saveObject('methods', _getMethodsList());
+    _gDB._saveObject('methods', _gDB._getMethodsList());
   }
 };
 
@@ -524,26 +524,26 @@ Meteor.startup(function() {
   // TODO: Do we have a better way, instead of depending on time should depend
   // on en event.
   Meteor.setTimeout(function() {
-    _loadMethods();
+    _gDB._loadMethods();
   }, 500);
 });
 
 /////////////////////////// SYNC TABS METHODS DATABSE //////////////////////////
 
-var syncDatabaseDelay = new OneTimeout();
+var syncDatabaseDelay = new _gDB.OneTimeout();
 
 // Offline client only databases will sync a bit different than normal
 // This function is a bit hard - but it works - optimal solution could be to
 // have virtual method calls it would complicate things
-var _syncDatabase = function(name) {
+_gDB._syncDatabase = function(name) {
   // We set a small delay in case of more updates within the wait
   syncDatabaseDelay.oneTimeout(function() {
-    var collection = _groundDatabases[name];
+    var collection = _gDB._groundDatabases[name];
     if (collection && collection.offlineDatabase === true) {
       // Add event hook
       GroundDB.onTabSync('database', name);
       // Hard reset database?
-      var newDocs = _loadObject('db.' + name);
+      var newDocs = _gDB._loadObject('db.' + name);
       collection.find().forEach(function(doc) {
         // Remove document
         collection._collection.remove(doc._id);
@@ -562,10 +562,10 @@ var _syncDatabase = function(name) {
   }, 150);
 };
 
-var syncMethodsDelay = new OneTimeout();
+var syncMethodsDelay = new _gDB.OneTimeout();
 
 // Syncronize tabs via method calls
-var _syncMethods = function() {
+_gDB._syncMethods = function() {
   // We are going to into reload, stop all access to localstorage
   _isReloading = true;
   // We are not master and the user is working on another tab, we are not in
@@ -575,7 +575,7 @@ var _syncMethods = function() {
     // Add event hook
     GroundDB.onTabSync('methods');
     // Resume methods
-    _loadMethods();
+    _gDB._loadMethods();
     // Resume normal writes
     _isReloading = false;
   }, 150);
@@ -584,12 +584,12 @@ var _syncMethods = function() {
 /////////////////////// ADD TRIGGERS IN LIVEDATACONNECTION /////////////////////
 
 // Modify connection, well just minor
-_.extend(_GroundDB.connection, {
+_.extend(_gDB.connection, {
   // Define a new super for the methods
   _gdbSuper: {
-    apply: _GroundDB.connection.apply,
+    apply: _gDB.connection.apply,
     _outstandingMethodFinished:
-    _GroundDB.connection._outstandingMethodFinished
+    _gDB.connection._outstandingMethodFinished
   },
   // Modify apply
   apply: function(/* arguments */) {
@@ -599,7 +599,7 @@ _.extend(_GroundDB.connection, {
     // Call super
     self._gdbSuper.apply.apply(self, arguments);
     // Save methods
-    _saveMethods();
+    _gDB._saveMethods();
   },
   // Modify _outstandingMethodFinished
   _outstandingMethodFinished: function() {
@@ -607,7 +607,7 @@ _.extend(_GroundDB.connection, {
     // Call super
     self._gdbSuper._outstandingMethodFinished.apply(self);
     // We save current status of methods
-    _saveMethods();
+    _gDB._saveMethods();
   }
 });
 
@@ -618,15 +618,15 @@ window.addEventListener('storage', function(e) {
   // Data changed in another tab, it would have updated localstorage, I'm
   // outdated so reload the tab and localstorage - but we test the prefix on the
   // key - since we actually make writes in the localstorage feature test
-  var prefixDatabaseRegEx = new RegExp('^' + _prefixGroundDB + 'db.');
+  var prefixDatabaseRegEx = new RegExp('^' + _gDB._prefix + 'db.');
 
   // Method calls are delayed a bit for optimization
-  if (e.key === _prefixGroundDB + 'methods') {
-    _syncMethods('mehods');
+  if (e.key === _gDB._prefix + 'methods') {
+    _gDB._syncMethods('mehods');
   }
 
   // Sync offline client only databases - These update instantly
   if (prefixDatabaseRegEx.test(e.key)) {
-    _syncDatabase(e.key.replace(prefixDatabaseRegEx, ''));
+    _gDB._syncDatabase(e.key.replace(prefixDatabaseRegEx, ''));
   }
 }, false);
