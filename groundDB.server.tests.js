@@ -1,10 +1,10 @@
 "use strict";
 
 function equals(a, b) {
-	return !!(JSON.stringify(a) === JSON.stringify(b));
+  return !!(JSON.stringify(a) === JSON.stringify(b));
 }
 
-Tinytest.add('GroundDB test queryString', function(test) {
+Tinytest.add('GroundDB - test', function(test) {
 
 });
 

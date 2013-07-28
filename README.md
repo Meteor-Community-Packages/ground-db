@@ -21,6 +21,7 @@ GroundDB is like a normal `Meteor.Collection` - but changes and outstanding meth
 * Works offline updating cross window tabs
 * Support for [SmartCollection](https://github.com/arunoda/meteor-smart-collections)
 * Support for offline client-side only databases
+* Uses `EJSON.minify` and `EJSON.maxify` to compress data in localstorage
 *In the future there will be a customizable conflict handler on the server-side*
 
 ##Creating a GroundDB object (variants)
@@ -100,9 +101,16 @@ It's possible to ground an allready existing `smartCollectin` on a `groundDB` eg
 ##Resume of outstanding methods
 Database changes and methods will be sent to the server just like normal. The methods are sent to server after relogin - this way `this.userId` isset when running on the server. In other words: `Just like normal`
 
-##Events
+##Publish and subscription
+###Online
+Subscription behavior when using `GroundDB` - When online it's just like normal `Meteor` so nothing new. If you unsubscribe a collection you can still insert etc. but the data will not be visible on the client.
+###Offline
+When offline the data remains in the local database - since the publish is a server thing. Use the query selector for filtering unwanted data.
+*When reconnected the database will update client subscription and changes will be resumed*
+
+##Events *- client-side*
 The event api is as follows:
-~~~js
+```js
 GroundDB.onQuotaExceeded = function() {};
 GroundDB.onResumeDatabase = function(name) {};
 GroundDB.onResumeMethods = function() {};
@@ -110,12 +118,17 @@ GroundDB.onMethodCall = function(methodCall) {};
 GroundDB.onCacheDatabase = function(name) {};
 GroundDB.onCacheMethods = function() {};
 GroundDB.onTabSync = function(key) {};
-~~~
+```
+
+##Conflict handling *IN the works - not ready for use yet*
+The conflict handling api is as follows:
+```js
+GroundDB.now(); // Returns server timestamp works on both client and server
+```
 
 ##Future
 * At the moment the conflict resolution is pretty basic last change recieved by server wins. This could be greatly improved by adding a proper conflict handler. *For more details look at comment in server.js*
 * Intelligent subscriptions - A way for the groundDB to keep the data most important for the user - and letting less important data go to match quota limit
-* Could possible make a simple mini/maxifier for documents stored in the localstorage - or have like an oldschool "stacker" for allowing more data.
 
 ##Contributions
 Feel free to send issues, pull requests all is wellcome

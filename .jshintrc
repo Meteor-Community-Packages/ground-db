@@ -106,6 +106,8 @@
         "Packages",
         "process",
         "GroundDB",
+        "_gDB",
+        "LocalCollection",
         "_",
         "Random"
     ]       // additional predefined global variables
