@@ -36,7 +36,7 @@ window.console = (window && window.console && window.console.log)?
 };
 
 // Status of app reload
-var _isReloading = false;
+_gDB._isReloading = false;
 
 // Returns the localstorage if its found and working
 // TODO: check if this works in IE
@@ -73,8 +73,8 @@ _gDB._getGroundDBPrefix = function(suffix) {
 
 // save object into localstorage
 _gDB._saveObject = function(name, object) {
-  if (_gDB.storage && _isReloading === false) {
-    var cachedDoc = _gDB.minify(object);
+  if (_gDB.storage && _gDB._isReloading === false) {
+    var cachedDoc = EJSON.minify(object);
     try {
       _gDB.storage.setItem(_gDB._getGroundDBPrefix(name), cachedDoc);
     } catch (e) {
@@ -89,7 +89,7 @@ _gDB._loadObject = function(name) {
   if (_gDB.storage) {
     // Then load cached document
     var cachedDoc = _gDB.storage.getItem(_gDB._getGroundDBPrefix(name));
-    return _gDB.maxify(cachedDoc);
+    return EJSON.maxify(cachedDoc);
   }
   return null;
 };
@@ -567,7 +567,7 @@ var syncMethodsDelay = new _gDB.OneTimeout();
 // Syncronize tabs via method calls
 _gDB._syncMethods = function() {
   // We are going to into reload, stop all access to localstorage
-  _isReloading = true;
+  _gDB._isReloading = true;
   // We are not master and the user is working on another tab, we are not in
   // a hurry to spam the browser with work, plus there are typically acouple
   // of db access required in most operations, we wait a sec?
@@ -577,7 +577,7 @@ _gDB._syncMethods = function() {
     // Resume methods
     _gDB._loadMethods();
     // Resume normal writes
-    _isReloading = false;
+    _gDB._isReloading = false;
   }, 150);
 };
 
