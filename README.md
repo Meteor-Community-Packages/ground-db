@@ -118,6 +118,9 @@ GroundDB.onMethodCall = function(methodCall) {};
 GroundDB.onCacheDatabase = function(name) {};
 GroundDB.onCacheMethods = function() {};
 GroundDB.onTabSync = function(key) {};
+
+// Reactive status of all subscriptions, ready or not:
+GroundDB.ready();
 ```
 
 ##Conflict handling *IN the works - not ready for use yet*

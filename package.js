@@ -10,8 +10,9 @@ Package.on_use(function (api) {
   "use strict";
   api.export('GroundDB');
   api.export('_gDB', ['client', 'server'], {testOnly: true});
-  api.use(['meteor', 'underscore', 'deps', 'random', 'minimongo', 'ejson', 'ejson-minimax'],
+  api.use(['meteor', 'underscore', 'random', 'minimongo', 'ejson', 'ejson-minimax'],
           ['client', 'server']);
+
   api.use(['deps'], 'client');
   //api.use([], 'server');
   //api.use(['localstorage', 'ejson'], 'client');

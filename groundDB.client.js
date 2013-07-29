@@ -25,6 +25,10 @@ _gDB.connection = Meteor.connection || Meteor.default_connection;
 _gDB.idParse = LocalCollection && LocalCollection._idParse ||
         Meteor.idParse;
 
+// State of all subscriptions in meteor
+_gDB.subscriptionsReady = false;
+_gDB.subscriptionsReadyDeps = new Deps.Dependency();
+
 // TODO: Remove
 window.Meteor = Meteor;
 ////////////////////////////// LOCALSTORAGE ////////////////////////////////////
@@ -220,6 +224,7 @@ GroundDB = function(name, options) {
     self.gdbSuper.storeUpdate = self._connection._stores[ self.name ].update;
     // Overwrite
     self._connection._stores[ self.name ].update = function (msg) {
+      console.log('GOT UPDATE');
       // We check that local loaded docs are removed before remote sync
       // otherwise it would throw an error
       if (msg.msg === 'added') {
@@ -227,6 +232,8 @@ GroundDB = function(name, options) {
         var doc = self._collection.findOne(mongoId);
         // If the doc allready found then we remove it
         if (doc) {
+          // We mark the data as remotely loaded
+          delete self._localOnly[mongoId];
           // Solve the conflict - server wins
           // Then remove the client document
           self._collection.remove(doc._id);
@@ -239,6 +246,27 @@ GroundDB = function(name, options) {
 
   // Flag true/false depending if database is loaded from local
   self._databaseLoaded = false;
+
+  // Map local-only - this makes sure that localstorage matches remote loaded db
+  self._localOnly = {};
+
+  // At some point we can do a remove all local-only data
+  self._remoteLocalOnly = function() {
+    _.each(self._localOnly, function(isLocalOnly, id) {
+      if (isLocalOnly) {
+        self._collection.remove({ _id: id });
+        delete self._localOnly[id];
+      }
+    });
+  };
+
+  Meteor.autorun(function() {
+    if (GroundDB.ready()) {
+      // If all subscriptions have updated the system the remove all local only
+      // data?
+      self._remoteLocalOnly();
+    }
+  });
 
   // We dont trust the localstorage so we make sure it doesn't contain
   // duplicated id's - primary a problem i FF
@@ -269,9 +297,11 @@ GroundDB = function(name, options) {
       // If collection is populated before we get started then the data in
       // memory would be considered latest therefor we dont load from local
       if (!exists) {
+        self._localOnly[doc._id] = true;
         self._collection.insert(doc);
       }
     });
+
 
     // Setting database loaded, this allows minimongo to be saved into local
     self._databaseLoaded = true;
@@ -359,6 +389,11 @@ GroundDB.onCacheMethods = function() {
 
 GroundDB.onTabSync = function(type, key) {
   console.log('Sync tabs - Cache is updated by: ' + type + ((key)?key:''));
+};
+
+GroundDB.ready = function() {
+  _gDB.subscriptionsReadyDeps.depend();
+  return _gDB.subscriptionsReady;
 };
 
 GroundDB.now = function() {
@@ -516,6 +551,25 @@ _gDB._saveMethods = function() {
     _gDB._saveObject('methods', _gDB._getMethodsList());
   }
 };
+
+//////////////////////////// ALL SUBSCRIPTIONS READY ///////////////////////////
+
+Meteor.setInterval(function() {
+    var allReady = true;
+    for (var subId in Meteor.connection._subscriptions) {
+      var sub = Meteor.connection._subscriptions[subId];
+      if (!sub.ready) {
+        allReady = false;
+        break;
+      }
+    }
+    // Update dependencies
+    if (allReady !== _gDB.subscriptionsReady) {
+      _gDB.subscriptionsReady = allReady;
+      _gDB.subscriptionsReadyDeps.changed();
+    }
+
+  }, 5000);
 
 //////////////////////////// STARTUP METHODS RESUME ////////////////////////////
 
