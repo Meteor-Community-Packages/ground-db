@@ -1,5 +1,5 @@
 Package.describe({
-  summary: "\u001b[32mv0.0.16\n"+
+  summary: "\u001b[32mv0.0.17\n"+
   "\u001b[33m-----------------------------------------\n"+
   "\u001b[0m GroundDB is a thin layer providing       \n"+
   "\u001b[0m Meteor offline database and methods      \n"+
@@ -8,8 +8,8 @@ Package.describe({
 
 Package.on_use(function (api) {
   "use strict";
-  api.export('GroundDB');
-  api.export('_gDB', ['client', 'server'], {testOnly: true});
+  api.export && api.export('GroundDB');
+  api.export && api.export('_gDB', ['client', 'server'], {testOnly: true});
   api.use(['meteor', 'underscore', 'random', 'minimongo', 'ejson', 'ejson-minimax'],
           ['client', 'server']);
 

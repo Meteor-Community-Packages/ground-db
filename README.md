@@ -52,8 +52,8 @@ GroundDB can be applyed on client-side only eg.: `new Meteor.Collection(null);`
   // Creates client-side only database, this one maps on suffix `null`
   var list = new GroundDB(null);
 
-  // Creates client-side only database, this one maps on suffix `list`
-  var list = new GroundDB(null, 'list');
+  // Creates client-side only database, this one maps on suffix `list` *(Meteor 0.6.5+)*
+  var list = new GroundDB('list', { connection: null });
   
   or
 
@@ -94,6 +94,10 @@ It's possible to ground an allready existing `smartCollectin` on a `groundDB` eg
   var mySmartCollection = new SmartCollection('foo');
   GroundDB(mySmartCollection);
 
+or
+
+  var mySmartCollection = GroundDB(new SmartCollection('foo'));
+
   // use the smart collection
   mySmartCollection.insert(/* stuff */);
 ```
@@ -118,10 +122,20 @@ GroundDB.onMethodCall = function(methodCall) {};
 GroundDB.onCacheDatabase = function(name) {};
 GroundDB.onCacheMethods = function() {};
 GroundDB.onTabSync = function(key) {};
+GroundDB.skipMethods = function(methodsToSkipObject)
 
 // Reactive status of all subscriptions, ready or not:
 GroundDB.ready();
 ```
+
+##Don't cache my method for offline resume
+Sometimes one may want a method call not to be resumeable, so we can tell `GroundDB` to skip the method when caching method calls:
+```js
+  GroundDB.skipMethods({
+    myOnlineOnlyMethod: true
+  });
+```
+*Pr. default the login method call is skipped resume because the Accounts does resume of itself*
 
 ##Conflict handling *IN the works - not ready for use yet*
 The conflict handling api is as follows:

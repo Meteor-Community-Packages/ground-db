@@ -171,44 +171,19 @@ GroundDB = function(name, options) {
   // Accepts smart collections by Arunoda Susiripala
   var self;
 
-  // If name is string or null then assume a normal Meteor.Collection
-  if (name === ''+name || name === null || typeof name === 'undefined') {
-    // We instanciate a new meteor collection, let it handle undefined
-    self = new Meteor.Collection(name, options);
+  // Either name is a Meteor collection or we create a new Meteor collection
+  if (name instanceof Meteor.Collection) {
+    self = name;
   } else {
-    // User set a collection in options
-    if (name instanceof Meteor.Collection) {
-      self = name;
-    } else {
-      if (name._localCollection instanceof Meteor.Collection) {
-        // We are in a smart collection
-        self = name._localCollection;
-        self.name = name.name;
-      } else {
-        // self not set, throw an error
-        throw new Error('GroundDB got an invalid name or collection');
-      }
-    }
+    self = new Meteor.Collection(name, options);
   }
 
-  // Is this an offline database?
-  self.offlineDatabase = false;
+  // Is this an offline client only database?
+  self.offlineDatabase = !!(self._connection === null);
 
   // Initialize collection name
-  self.name = (self.name)? self.name : self._name;
+  self.name = (self._name)? self._name : 'null';
 
-  // We have an client-side only offline database
-  if (self.name === null) {
-    if (typeof options === 'string' && options !== '') {
-      // We have a mapped offline only database
-      self.name = options;
-    } else {
-      // No options set for mapping offline db
-      self.name = 'null';
-    }
-    // This is an offline database
-    self.offlineDatabase = true;
-  }
 
   /////// Finally got a name... and rigged
 
@@ -232,7 +207,7 @@ GroundDB = function(name, options) {
         var doc = self._collection.findOne(mongoId);
         // If the doc allready found then we remove it
         if (doc) {
-          // We mark the data as remotely loaded
+          // We mark the data as remotely loaded TODO:
           delete self._localOnly[mongoId];
           // Solve the conflict - server wins
           // Then remove the client document
@@ -250,7 +225,8 @@ GroundDB = function(name, options) {
   // Map local-only - this makes sure that localstorage matches remote loaded db
   self._localOnly = {};
 
-  // At some point we can do a remove all local-only data
+  // At some point we can do a remove all local-only data? Making sure that we
+  // Only got the same data as the subscription
   self._remoteLocalOnly = function() {
     _.each(self._localOnly, function(isLocalOnly, id) {
       if (isLocalOnly) {
@@ -264,7 +240,9 @@ GroundDB = function(name, options) {
     if (GroundDB.ready()) {
       // If all subscriptions have updated the system the remove all local only
       // data?
-      self._remoteLocalOnly();
+      // TODO: Only on non client only offline databases
+      // self._remoteLocalOnly(); // TODO: Still buggish should be called on
+      // patched
     }
   });
 
@@ -297,7 +275,10 @@ GroundDB = function(name, options) {
       // If collection is populated before we get started then the data in
       // memory would be considered latest therefor we dont load from local
       if (!exists) {
-        self._localOnly[doc._id] = true;
+        if (!self.offlineDatabase) {
+          // If online database then mark the doc as local only TODO:
+          self._localOnly[doc._id] = true;
+        }
         self._collection.insert(doc);
       }
     });
@@ -396,8 +377,28 @@ GroundDB.ready = function() {
   return _gDB.subscriptionsReady;
 };
 
+GroundDB.saveObject = _gDB._saveObject;
+
+GroundDB.loadObject = _gDB._loadObject(name);
+
 GroundDB.now = function() {
   return Date.now() + _gDB._serverTimeDiff;
+};
+
+// Methods to skip from caching
+_gDB.skipThisMethod = { login: true, getServerTime: true };
+
+// Add settings for methods to skip or not when caching methods
+GroundDB.skipMethods = function(methods) {
+  if (typeof methods !== 'object') {
+    throw new Error('skipMethods expects parametre as object of method names to skip when caching methods');
+  }
+  for (var key in methods) {
+    if (methods.hasOwnProperty(key)) {
+      // Extend the skipMethods object keys with boolean values
+      _gDB.skipThisMethod[key] = !!methods[key];
+    }
+  }
 };
 
 ///////////////////////////// RESUME METHODS ///////////////////////////////////
@@ -409,10 +410,10 @@ _gDB._methodsResumed = false;
 _gDB._getMethodsList = function() {
   // Array of outstanding methods
   var methods = [];
-  var skipThisMethod = { login: true, getServerTime: true };
+  // TODO: It should be a public API to disallow caching of some method calls
   // Convert the data into nice array
   _.each(_gDB.connection._methodInvokers, function(method) {
-    if (!skipThisMethod[method._message.method]) {
+    if (!_gDB.skipThisMethod[method._message.method]) {
       // Dont cache login or getServerTime calls - they are spawned pr. default
       methods.push({
         // Format the data
@@ -475,27 +476,17 @@ _gDB._loadMethods = function() {
 
       // parse "/collection/command" or "command"
       var params = method.method.split('/');
-      var command = (params.length > 2)?params[2]:params[1];
-      var collection = (params.length > 2)?params[1]:'';
-      // TODO: would have been nicer if SmartCollection used same naming as
-      // Meteor
-      params = ''+params;
-      var paramIndex = 0;
-      if (params === '_si_' || params === '_su_' || params === '_sr_') {
-        // Get collection from SmartCollection call
-        command = params;
-        collection = method.args[0];
-        paramIndex++;
-      }
+      var collection = params[1];
+      var command = params[2];
 
       // Do work on collection
-      if (collection !== '') {
+      if (collection && command) {
         // we are going to run an simulated insert - this is allready in db
         // since we are running local, so we remove it from the collection first
         if (_gDB._groundDatabases[collection]) {
           // The database is registered as a ground database
-          var mongoId = _gDB.idParse((method.args && method.args[paramIndex])?
-                  method.args[paramIndex]._id || method.args[paramIndex]:'');
+          var mongoId = _gDB.idParse((method.args && method.args[0])?
+                  method.args[0]._id || method.args[0]:'');
 
           // Get the document on the client - if found
           var doc = _gDB._groundDatabases[collection]._collection.findOne(mongoId);
@@ -509,25 +500,8 @@ _gDB._loadMethods = function() {
               // inserted
               _gDB._groundDatabases[collection]._collection.remove(mongoId);
             } // EO handle insert
-            // Add tab support in SmartCollections
-            if (command === '_su_') { // TODO: Warn if using $inc or $dec?
-              // params 0:id 1:modif
-              _gDB._groundDatabases[collection]._collection.update({ _id: mongoId },
-                      method.args[paramIndex+1]);
-            }
-            if (command === '_sr_') {
-              // param 0:id
-              _gDB._groundDatabases[collection]._collection.remove(
-                      method.args[paramIndex]);
-            }
-          } else { // EO Else no doc found in client database
-            // Add tab support in SmartCollections
-            // param 0:doc
-            if (command === '_si_') {
-              _gDB._groundDatabases[collection]._collection.insert(
-                      method.args[paramIndex]);
-            }
-          }
+
+          } // EO Else no doc found in client database
         } // else collection would be a normal database
       } // EO collection work
       // Add method to connection
@@ -554,6 +528,7 @@ _gDB._saveMethods = function() {
 
 //////////////////////////// ALL SUBSCRIPTIONS READY ///////////////////////////
 
+// Could be nice to have a Meteor.allSubscriptionsReady
 Meteor.setInterval(function() {
     var allReady = true;
     for (var subId in Meteor.connection._subscriptions) {

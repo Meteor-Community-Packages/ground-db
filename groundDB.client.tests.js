@@ -17,13 +17,16 @@ Tinytest.add('GroundDB - test storage', function(test) {
   // Basic test
   _gDB.storage.setItem('test', 'test-value');
   var val = _gDB.storage.getItem('test');
+  // 1
   test.equal(val, 'test-value');
   _gDB.storage.removeItem('test');
   val = _gDB.storage.getItem('test');
+  // 2
   test.equal(val, null);
 
   // set test prefix
   _gDB._prefix = 'test.';
+  // 3
   test.equal(_gDB._getGroundDBPrefix('suffix'), 'test.suffix', '_getGroundDBPrefix error');
 
   var testSaveLoad = function(suffix, obj, text) {

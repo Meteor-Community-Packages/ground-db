@@ -16,28 +16,19 @@ GroundDB = function(name, options) {
   // Inheritance Meteor Collection can be set by options.collection
   // Accepts smart collections by Arunoda Susiripala
   var self;
-  // If name is string or null then assume a normal Meteor.Collection
-  if (name === ''+name || name === null || typeof name === 'undefined') {
-    // We instanciate a new meteor collection, let it handle undefined
-    self = new Meteor.Collection(name, options);
+  // Either name is a Meteor collection or we create a new Meteor collection
+  if (name instanceof Meteor.Collection) {
+    self = name;
   } else {
-    // User set a collection in options
-    if (name instanceof Meteor.Collection) {
-      self = name;
-    } else {
-      if (typeof Meteor.SmartCollection !== 'undefined' &&
-              name instanceof Meteor.SmartCollection) {
-        // We are in a smart collection
-        self = name._collection;
-      } else {
-        // self not set, throw an error
-        throw new Error('GroundDB got an invalid name or collection');
-      }
-    }
+    self = new Meteor.Collection(name, options);
   }
 
+  // Is this an offline client only database?
+  self.offlineDatabase = !!(self._connection === null);
+  console.log(self._connection);
+
   // Initialize collection name
-  self.name = (self.name)? self.name : self._name;
+  self.name = (self._name)? self._name : 'null';
 
   // This is the basic interface allowing users easily access for handling
   // method calls, this.super() is the super and this.collection is self
