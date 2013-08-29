@@ -642,20 +642,23 @@ _.extend(_gDB.connection, {
 
 /////////////////////// LOAD CHANGES FROM OTHER TABS ///////////////////////////
 
-// Add support for multiple tabs
-window.addEventListener('storage', function(e) {
-  // Data changed in another tab, it would have updated localstorage, I'm
-  // outdated so reload the tab and localstorage - but we test the prefix on the
-  // key - since we actually make writes in the localstorage feature test
-  var prefixDatabaseRegEx = new RegExp('^' + _gDB._prefix + 'db.');
+// Make sure we have an addEventListener
+if (typeof window.addEventListener !== 'undefined') {
+    // Add support for multiple tabs
+    window.addEventListener('storage', function(e) {
+    // Data changed in another tab, it would have updated localstorage, I'm
+    // outdated so reload the tab and localstorage - but we test the prefix on the
+    // key - since we actually make writes in the localstorage feature test
+    var prefixDatabaseRegEx = new RegExp('^' + _gDB._prefix + 'db.');
 
-  // Method calls are delayed a bit for optimization
-  if (e.key === _gDB._prefix + 'methods') {
-    _gDB._syncMethods('mehods');
-  }
+    // Method calls are delayed a bit for optimization
+    if (e.key === _gDB._prefix + 'methods') {
+      _gDB._syncMethods('mehods');
+    }
 
-  // Sync offline client only databases - These update instantly
-  if (prefixDatabaseRegEx.test(e.key)) {
-    _gDB._syncDatabase(e.key.replace(prefixDatabaseRegEx, ''));
-  }
-}, false);
+    // Sync offline client only databases - These update instantly
+    if (prefixDatabaseRegEx.test(e.key)) {
+      _gDB._syncDatabase(e.key.replace(prefixDatabaseRegEx, ''));
+    }
+  }, false);
+}
