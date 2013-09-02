@@ -25,7 +25,7 @@ GroundDB = function(name, options) {
 
   // Is this an offline client only database?
   self.offlineDatabase = !!(self._connection === null);
-  console.log(self._connection);
+  //console.log(self._connection);
 
   // Initialize collection name
   self.name = (self._name)? self._name : 'null';
@@ -36,19 +36,19 @@ GroundDB = function(name, options) {
   self.conflictHandlers = (options && options.conflictHandlers)?
         options.conflictHandlers: {
     'insert': function(doc) {
-      console.log('insert');
-      console.log(doc);
+      //console.log('insert');
+      //console.log(doc);
       this.super(doc);
     },
     'update': function(id, modifier) {
-      console.log('update');
-      console.log(id);
-      console.log(modifier);
+      //console.log('update');
+      //console.log(id);
+      //console.log(modifier);
       this.super(id, modifier);
     },
     'remove': function(id) {
-      console.log('remove');
-      console.log(id);
+      //console.log('remove');
+      //console.log(id);
       this.super(id);
     }
   };
