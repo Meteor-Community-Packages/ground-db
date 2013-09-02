@@ -240,9 +240,7 @@ GroundDB = function(name, options) {
     if (GroundDB.ready()) {
       // If all subscriptions have updated the system the remove all local only
       // data?
-      // TODO: Only on non client only offline databases
-      // self._remoteLocalOnly(); // TODO: Still buggish should be called on
-      // patched
+      self._remoteLocalOnly();
     }
   });
 
@@ -499,6 +497,10 @@ _gDB._loadMethods = function() {
               // Remove the item from ground database so it can be correctly
               // inserted
               _gDB._groundDatabases[collection]._collection.remove(mongoId);
+              // We mark this as remote since we will be corrected if it's
+              // Wrong + If we don't the data is lost in this session.
+              // So we remove any localOnly flags
+              delete _gDB._groundDatabases[collection]._localOnly[mongoId];
             } // EO handle insert
 
           } // EO Else no doc found in client database
