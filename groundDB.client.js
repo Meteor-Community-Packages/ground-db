@@ -199,7 +199,7 @@ GroundDB = function(name, options) {
     self.gdbSuper.storeUpdate = self._connection._stores[ self.name ].update;
     // Overwrite
     self._connection._stores[ self.name ].update = function (msg) {
-      console.log('GOT UPDATE');
+      // console.log('GOT UPDATE');
       // We check that local loaded docs are removed before remote sync
       // otherwise it would throw an error
       if (msg.msg === 'added') {
@@ -347,27 +347,27 @@ GroundDB.onQuotaExceeded = function() {
 };
 
 GroundDB.onResumeDatabase = function(name) {
-  console.log('Resume database: ' + name);
+  // console.log('Resume database: ' + name);
 };
 
 GroundDB.onResumeMethods = function() {
-  console.log('Resume outstanding methods');
+  // console.log('Resume outstanding methods');
 };
 
 GroundDB.onMethodCall = function(methodCall) {
-  console.log('Method call ' + methodCall.method);
+  // console.log('Method call ' + methodCall.method);
 };
 
 GroundDB.onCacheDatabase = function(name) {
-  console.log('Cache database: ' + name);
+  // console.log('Cache database: ' + name);
 };
 
 GroundDB.onCacheMethods = function() {
-  console.log('Cache methods');
+  // console.log('Cache methods');
 };
 
 GroundDB.onTabSync = function(type, key) {
-  console.log('Sync tabs - Cache is updated by: ' + type + ((key)?key:''));
+  // console.log('Sync tabs - Cache is updated by: ' + type + ((key)?key:''));
 };
 
 GroundDB.ready = function() {
