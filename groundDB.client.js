@@ -78,7 +78,7 @@ _gDB._getGroundDBPrefix = function(suffix) {
 // save object into localstorage
 _gDB._saveObject = function(name, object) {
   if (_gDB.storage && _gDB._isReloading === false) {
-    var cachedDoc = EJSON.minify(object);
+    var cachedDoc = object && EJSON.minify(object);
     try {
       _gDB.storage.setItem(_gDB._getGroundDBPrefix(name), cachedDoc);
     } catch (e) {
@@ -93,7 +93,7 @@ _gDB._loadObject = function(name) {
   if (_gDB.storage) {
     // Then load cached document
     var cachedDoc = _gDB.storage.getItem(_gDB._getGroundDBPrefix(name));
-    return EJSON.maxify(cachedDoc);
+    return (cachedDoc)? EJSON.maxify(cachedDoc): null;
   }
   return null;
 };
