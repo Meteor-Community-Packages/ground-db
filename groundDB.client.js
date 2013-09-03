@@ -377,7 +377,7 @@ GroundDB.ready = function() {
 
 GroundDB.saveObject = _gDB._saveObject;
 
-GroundDB.loadObject = _gDB._loadObject(name);
+GroundDB.loadObject = _gDB._loadObject;
 
 GroundDB.now = function() {
   return Date.now() + _gDB._serverTimeDiff;
