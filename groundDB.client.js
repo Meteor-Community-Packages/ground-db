@@ -399,6 +399,8 @@ GroundDB.skipMethods = function(methods) {
   }
 };
 
+GroundDB.OneTimeout = _gDB.OneTimeout;
+
 ///////////////////////////// RESUME METHODS ///////////////////////////////////
 
 // Is methods resumed?
