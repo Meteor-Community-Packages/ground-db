@@ -248,14 +248,18 @@ GroundDB = function(name, options) {
   // duplicated id's - primary a problem i FF
   self._checkDocs = function(a) {
     var c = {};
-    // We create c as an object with no duplicate _id's
-    for (var i = 0, keys = Object.keys(a); i < keys.length; i++) {
-      // Extract key/value
-      var key = keys[i];
-      var doc = a[key];
-      // set value in c
+    // // We create c as an object with no duplicate _id's
+    // for (var i = 0, keys = Object.keys(a); i < keys.length; i++) {
+    //   // Extract key/value
+    //   var key = keys[i];
+    //   var doc = a[key];
+    //   // set value in c
+    //   c[key] = doc;
+    // }
+
+    _.each(a, function(doc, key) {
       c[key] = doc;
-    }
+    });
     return c;
   };
 
