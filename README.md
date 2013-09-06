@@ -1,4 +1,4 @@
-Ground DB
+Ground DB [![Build Status](https://travis-ci.org/raix/Meteor-GroundDB.png?branch=master)](https://travis-ci.org/raix/Meteor-GroundDB)
 =========
 GroundDB is a fast and thin layer providing Meteor offline database and methods - Taking cloud data to the ground.
 
