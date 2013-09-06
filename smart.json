@@ -6,5 +6,8 @@
   "version": "0.0.19",
   "git": "https://github.com/raix/Meteor-GroundDB.git",
   "packages": {
+    "ejson-minimax": {
+      "git": "https://github.com/raix/ejson-minimax.git"
+    }
   }
 }
