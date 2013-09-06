@@ -23,7 +23,7 @@ Package.on_use(function (api) {
 });
 
 Package.on_test(function (api) {
-  api.use('groundDB', ['client']);
+  api.use('GroundDB', ['client']);
   api.use('test-helpers', 'client');
   api.use(['tinytest', 'underscore', 'ejson', 'ordered-dict',
            'random', 'deps']);
