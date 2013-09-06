@@ -13,6 +13,8 @@ Package.on_use(function (api) {
   api.use(['meteor', 'underscore', 'random', 'minimongo', 'ejson', 'ejson-minimax'],
           ['client', 'server']);
 
+  api.use('standard-app-packages', ['client', 'server']);
+
   api.use(['deps'], 'client');
   //api.use([], 'server');
   //api.use(['localstorage', 'ejson'], 'client');
