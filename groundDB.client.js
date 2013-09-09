@@ -230,7 +230,7 @@ GroundDB = function(name, options) {
 
   // At some point we can do a remove all local-only data? Making sure that we
   // Only got the same data as the subscription
-  self._remoteLocalOnly = function() {
+  self.removeLocalOnly = function() {
     _.each(self._localOnly, function(isLocalOnly, id) {
       if (isLocalOnly) {
         self._collection.remove({ _id: id });
@@ -239,11 +239,15 @@ GroundDB = function(name, options) {
     });
   };
 
-  Meteor.autorun(function() {
-    if (GroundDB.ready()) {
+  self.isCleanedUp = false;
+
+  Deps.autorun(function() {
+    if (GroundDB.ready() && !self.isCleanedUp) {
       // If all subscriptions have updated the system then remove all local only
       // data?
-      self._remoteLocalOnly();
+      // console.log('Clean up ' + self.name);
+      self.isCleanedUp = true;
+      self.removeLocalOnly();
     }
   });
 
@@ -444,14 +448,31 @@ _gDB._getMethodsList = function() {
 // and then switches to another tab and submits a change there before the first
 // method gets back?
 _gDB._flushInMemoryMethods = function() {
+  var didFlushSome = false;
+  // TODO: flush should be rewritten to - we should do method proxy stuff...
+  // This code is a bit dirty
   if (_gDB.connection && _gDB.connection._outstandingMethodBlocks &&
           _gDB.connection._outstandingMethodBlocks.length) {
+
     // Clear the in memory outstanding methods TODO: Check if this is enough
-    _gDB.connection._outstandingMethodBlocks = [];
-    // Clear invoke callbacks
-    _gDB.connection._methodInvokers = {};
-    // Call the event callback
-    GroundDB.onFlushInMemoryMethods();
+    // Check to see if we should skip methods
+    for (var i = 0; i < _gDB.connection._outstandingMethodBlocks.length; i++) {
+      var method = _gDB.connection._outstandingMethodBlocks[i];
+      if (method && method._message && !_gDB.skipThisMethod[method._message.method]) {
+        // Clear invoke callbacks
+//    _gDB.connection._outstandingMethodBlocks = [];
+        delete _gDB.connection._outstandingMethodBlocks[i];
+//    _gDB.connection._methodInvokers = {};
+        delete _gDB.connection._methodInvokers[i];
+        // Set the flag to call back
+        didFlushSome = true;
+      }
+    }
+    if (didFlushSome) {
+      // Call the event callback
+      GroundDB.onFlushInMemoryMethods();
+    }
+
   }
 };
 
