@@ -18,7 +18,6 @@ GroundDB is like a normal `Meteor.Collection` - but changes and outstanding meth
 * Broad browser support Chrome, Safari, Firefox and Internet Explorer 9
 * Fallback to normal Meteor.Collection if no localstorage
 * Resume of changes in collections
-* Resume of methods
 * Works offline updating cross window tabs
 * Support for [SmartCollection](https://github.com/arunoda/meteor-smart-collections)
 * Support for offline client-side only databases
@@ -80,7 +79,7 @@ Localstorage is simple and widely supported - but slow - *Thats why we only use 
 
 GroundDB saves outstanding methods and minimongo db into localstorage - The number of saves to localstorage is minimized.
 
-When the app loads GroundDB resumes methods and database changes - made when offline and browser closed.
+When the app loads GroundDB resumes database changes - made when offline and browser closed.
 
 ##Ground user details
 It's possible to mount an allready existing collection on a `groundDB` eg.:
@@ -103,9 +102,6 @@ or
   mySmartCollection.insert(/* stuff */);
 ```
 
-##Resume of outstanding methods
-Database changes and methods will be sent to the server just like normal. The methods are sent to server after relogin - this way `this.userId` isset when running on the server. In other words: `Just like normal`
-
 ##Publish and subscription
 ###Online
 Subscription behavior when using `GroundDB` - When online it's just like normal `Meteor` so nothing new. If you unsubscribe a collection you can still insert etc. but the data will not be visible on the client.
@@ -118,25 +114,12 @@ The event api is as follows:
 ```js
 GroundDB.onQuotaExceeded = function() {};
 GroundDB.onResumeDatabase = function(name) {};
-GroundDB.onResumeMethods = function() {};
-GroundDB.onMethodCall = function(methodCall) {};
 GroundDB.onCacheDatabase = function(name) {};
-GroundDB.onCacheMethods = function() {};
 GroundDB.onTabSync = function(key) {};
-GroundDB.skipMethods = function(methodsToSkipObject)
 
 // Reactive status of all subscriptions, ready or not:
 GroundDB.ready();
 ```
-
-##Don't cache my method for offline resume
-Sometimes one may want a method call not to be resumeable, so we can tell `GroundDB` to skip the method when caching method calls:
-```js
-  GroundDB.skipMethods({
-    myOnlineOnlyMethod: true
-  });
-```
-*Pr. default the login method call is skipped resume because the Accounts does resume of itself*
 
 ##Conflict handling *IN the works - not ready for use yet*
 The conflict handling api is as follows:
