@@ -9,7 +9,7 @@ Package.describe({
 
 Package.on_use(function (api) {
   "use strict";
-  api.imply && api.imply('ejson-minimax', ['client', 'server']);
+//  api.imply && api.imply('ejson-minimax', ['client', 'server']);
   api.export && api.export('GroundDB');
   api.export && api.export('_gDB', ['client', 'server'], {testOnly: true});
   api.use(['meteor', 'underscore', 'random', 'minimongo', 'ejson', 'ejson-minimax'],
