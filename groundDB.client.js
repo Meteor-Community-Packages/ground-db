@@ -24,6 +24,7 @@ _gDB.connection = Meteor.connection || Meteor.default_connection;
 // Map parseId function
 _gDB.idParse = LocalCollection && LocalCollection._idParse ||
         Meteor.idParse;
+// new Meteor.Collection.ObjectID(hexString)
 
 // State of all subscriptions in meteor
 _gDB.subscriptionsReady = false;

@@ -1,10 +1,5 @@
 Package.describe({
-  summary: "Ground Meteor.Collections offline\n"+
-  "\u001b[32mv0.0.19\n"+
-  "\u001b[33m-----------------------------------------\n"+
-  "\u001b[0m GroundDB is a thin layer providing       \n"+
-  "\u001b[0m Meteor offline database and methods      \n"+
-  "\u001b[33m-------------------------------------RaiX\n"
+  summary: "Ground Meteor.Collections offline"
 });
 
 Package.on_use(function (api) {
