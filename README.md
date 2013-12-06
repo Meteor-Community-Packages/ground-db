@@ -1,4 +1,4 @@
-Ground DB [![Build Status](https://travis-ci.org/raix/Meteor-GroundDB.png?branch=master)](https://travis-ci.org/raix/Meteor-GroundDB) [![Donate](https://www.paypalobjects.com/en_US/i/btn/btn_donate_SM.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=Q9S3JT7D8J4PQ)
+Ground DB [![Build Status](https://travis-ci.org/GroundMeteor/Meteor-GroundDB.png?branch=master)](https://travis-ci.org/GroundMeteor/Meteor-GroundDB) [![Donate](https://www.paypalobjects.com/en_US/i/btn/btn_donate_SM.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=Q9S3JT7D8J4PQ)
 =========
 
 GroundDB is a fast and thin layer providing Meteor offline database and methods - Taking cloud data to the ground.
