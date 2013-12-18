@@ -14,7 +14,7 @@ GroundDB is like a normal `Meteor.Collection` - but changes and outstanding meth
 [Live basic debug test](http://grounddb.meteor.com/)
 
 ##Features:
-* Ligth footprint
+* Light footprint
 * Broad browser support Chrome, Safari, Firefox and Internet Explorer 9
 * Fallback to normal Meteor.Collection if no localstorage
 * Resume of changes in collections
