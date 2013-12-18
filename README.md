@@ -47,7 +47,7 @@ GroundDB is like a normal `Meteor.Collection` - but changes and outstanding meth
 *Example of different patterns. Grounding a `Meteor.Collection` will attach the `cache`, `resume` and `cross tabs update offline`*
 
 ##Pure client-side offline databases (variants)
-GroundDB can be applyed on client-side only eg.: `new Meteor.Collection(null);`
+GroundDB can be applied on client-side only eg.: `new Meteor.Collection(null);`
 ```js
 
   // Creates client-side only database, this one maps on suffix `null`
