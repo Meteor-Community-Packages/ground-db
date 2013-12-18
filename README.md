@@ -23,7 +23,7 @@ GroundDB is like a normal `Meteor.Collection` - but changes and outstanding meth
 * Support for [SmartCollection](https://github.com/arunoda/meteor-smart-collections)
 * Support for offline client-side only databases
 * Uses `EJSON.minify` and `EJSON.maxify` to compress data in localstorage
-*In the future there will be a customizable conflict handler on the server-side*
+* *In the future there will be a customizable conflict handler on the server-side*
 
 ##Creating a GroundDB object (variants)
 ```js
