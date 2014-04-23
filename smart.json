@@ -1,13 +1,13 @@
 {
-  "name": "grounddb",
-  "description": "GroundDB is a thin layer providing Meteor offline database and methods",
-  "homepage": "https://github.com/GroundMeteor/Meteor-GroundDB",
-  "author": "Morten Henriksen  (http://gi-software.com)",
-  "version": "0.0.20",
-  "git": "https://github.com/GroundMeteor/Meteor-GroundDB.git",
-  "packages": {
-    "ejson-minimax": {
-      "git": "https://github.com/GroundMeteor/ejson-minimax.git"
-    }
-  }
+	"name": "grounddb",
+	"description": "GroundDB is a thin layer providing Meteor offline database and methods",
+	"homepage": "https://github.com/GroundMeteor/Meteor-GroundDB",
+	"author": "Morten Henriksen  (http://gi-software.com)",
+	"version": "0.0.21",
+	"git": "https://github.com/GroundMeteor/Meteor-GroundDB.git",
+	"packages": {
+		"ejson-minimax": {
+			"git": "https://github.com/GroundMeteor/ejson-minimax.git"
+		}
+	}
 }
