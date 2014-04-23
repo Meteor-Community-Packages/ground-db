@@ -278,7 +278,7 @@ GroundDB = function(name, options) {
     // Load object from localstorage
     var docs = _gDB._loadObject('db.' + self.name);
     // Initialize client documents
-    _.each(self._checkDocs( (docs) ? docs : {} ), function(doc) {
+    _.each(self._checkDocs( (docs) ? docs._map : {} ), function(doc) {
       // Test if document allready exists, this is a rare case but accounts
       // sometimes adds data to the users database, eg. if "users" are grounded
       var exists = self._collection.findOne({ _id: doc._id });
@@ -322,7 +322,7 @@ GroundDB = function(name, options) {
         // Make sure our database is loaded
         GroundDB.onCacheDatabase(self.name);
         // Save the collection into localstorage
-        _gDB._saveObject('db.' + self.name, self._collection.docs);
+        _gDB._saveObject('db.' + self.name, self._collection._docs);
       }, 200);
     }
   };
