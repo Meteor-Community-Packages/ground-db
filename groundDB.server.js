@@ -75,6 +75,19 @@ GroundDB = function(name, options) {
   return self;
 };
 
+////////////////////////// GET SERVER TIME DIFFERENCE //////////////////////////
+
+Meteor.methods({
+  'getServerTime': function() {
+    return Date.now();
+  }
+});
+
+// Unify client / server api
+GroundDB.now = function() {
+  return Date.now();
+};
+
 ////////////////////////// TIMESTAMP CONFLICTHANDLER ///////////////////////////
 
 // TODO:
