@@ -81,7 +81,7 @@ _gDB._saveObject = function(name, object) {
   if (_gDB.storage && _gDB._isReloading === false) {
     var cachedDoc = object && EJSON.minify(object);
     try {
-      _gDB.storage.setItem(_gDB._getGroundDBPrefix(name), cachedDoc);
+      _gDB.storage.setItem(_gDB._getGroundDBPrefix(name), JSON.stringify(cachedDoc));
     } catch (e) {
       GroundDB.onQuotaExceeded();
     }
@@ -93,7 +93,7 @@ _gDB._loadObject = function(name) {
   // If storage is supported
   if (_gDB.storage) {
     // Then load cached document
-    var cachedDoc = _gDB.storage.getItem(_gDB._getGroundDBPrefix(name));
+    var cachedDoc = JSON.parse(_gDB.storage.getItem(_gDB._getGroundDBPrefix(name)));
     return (cachedDoc)? EJSON.maxify(cachedDoc): null;
   }
   return null;
