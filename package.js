@@ -13,7 +13,7 @@ Package.on_use(function (api) {
   }
 
   if(api.versionsFrom !== undefined) { // 0.9+
-    api.use(['raix:ejson-minimax'], ['client', 'server']);
+    api.use(['raix:ejson-minimax@0.0.6'], ['client', 'server']);
   } else {
     api.use(['ejson-minimax'], ['client', 'server']);
   }
