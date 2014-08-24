@@ -2,7 +2,7 @@ Package.describe({
   summary: "Ground Meteor.Collections offline",
   version: "0.0.23",
   name: "raix:grounddb",
-  githubUrl: "https://github.com/GroundMeteor/Meteor-GroundDB/"
+  url: "https://github.com/GroundMeteor/Meteor-GroundDB/"
 });
 
 Package.on_use(function (api) {
