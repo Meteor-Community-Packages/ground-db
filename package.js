@@ -7,10 +7,8 @@ Package.describe({
 
 Package.on_use(function (api) {
   "use strict";
-  if(api.export !== undefined) {
-    api.export('GroundDB');
-    api.export('_gDB', ['client', 'server'], {testOnly: true});
-  }
+   api.export && api.export('GroundDB');
+   api.export && api.export('_gDB', ['client', 'server'], {testOnly: true});
 
   if(api.versionsFrom !== undefined) { // 0.9+
     api.use(['raix:ejson-minimax@0.0.6'], ['client', 'server']);
