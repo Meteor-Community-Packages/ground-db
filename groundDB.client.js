@@ -79,11 +79,18 @@ _gDB._getGroundDBPrefix = function(suffix) {
 // save object into localstorage
 _gDB._saveObject = function(name, object) {
   if (_gDB.storage && _gDB._isReloading === false) {
-    var cachedDoc = object && EJSON.minify(object);
+
     try {
-      _gDB.storage.setItem(_gDB._getGroundDBPrefix(name), JSON.stringify(cachedDoc));
-    } catch (e) {
-      GroundDB.onQuotaExceeded();
+
+      var cachedDoc = object && MiniMax.stringify(object);
+      try {
+        _gDB.storage.setItem(_gDB._getGroundDBPrefix(name), cachedDoc);
+      } catch (e) {
+        GroundDB.onQuotaExceeded();
+      }
+
+    } catch(err) {
+      // Emit storage error due to parser error
     }
   }
 };
@@ -93,8 +100,12 @@ _gDB._loadObject = function(name) {
   // If storage is supported
   if (_gDB.storage) {
     // Then load cached document
-    var cachedDoc = JSON.parse(_gDB.storage.getItem(_gDB._getGroundDBPrefix(name)));
-    return (cachedDoc)? EJSON.maxify(cachedDoc): null;
+    var cachedDoc = _gDB.storage.getItem(_gDB._getGroundDBPrefix(name));
+    try {
+      return (cachedDoc)? MiniMax.parse(cachedDoc): null;
+    } catch(err) {
+      // Emit parser error?
+    }
   }
   return null;
 };
