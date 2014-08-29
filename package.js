@@ -1,6 +1,6 @@
 Package.describe({
   name: "raix:grounddb",
-  version: "0.1.3",
+  version: "0.1.4",
   summary: "Ground Meteor.Collections offline",
   git: "https://github.com/GroundMeteor/Meteor-GroundDB.git"
 });
@@ -15,7 +15,7 @@ Package.on_use(function (api) {
     'random@1.0.0',
     'minimongo@1.0.0',
     'ejson@1.0.0',
-    'raix:minimax@0.0.9'
+    'raix:minimax@0.1.0'
     ], ['client', 'server']);
 
   api.use('standard-app-packages@1.0.0', ['client', 'server']);
