@@ -1,12 +1,13 @@
 Package.describe({
-  name: "grounddb",
+  name: "ground:db",
   version: "0.1.3",
   summary: "Ground Meteor.Collections offline",
   git: "https://github.com/GroundMeteor/Meteor-GroundDB.git"
 });
 
 Package.on_use(function (api) {
-  "use strict";
+  api.versionsFrom && api.versionsFrom('METEOR@0.9.1');
+
   api.export && api.export('GroundDB');
   api.export && api.export('_gDB', ['client', 'server'], {testOnly: true});
   api.use([
@@ -15,10 +16,10 @@ Package.on_use(function (api) {
     'random',
     'minimongo',
     'ejson',
-    'ejson-minimax'
+    'ground:minimax'
     ], ['client', 'server']);
 
-  api.use('standard-app-packages', ['client', 'server']);
+  api.use('meteor-platform', ['client', 'server']);
 
   api.use(['deps'], 'client');
   //api.use([], 'server');
@@ -28,7 +29,7 @@ Package.on_use(function (api) {
 });
 
 Package.on_test(function (api) {
-  api.use('grounddb', ['client']);
+  api.use('ground:db', ['client']);
   api.use('test-helpers', 'client');
   api.use(['tinytest', 'underscore', 'ejson', 'ordered-dict',
            'random', 'deps']);
