@@ -2,11 +2,15 @@
   "dependencies": [
     [
       "application-configuration",
-      "1.0.1"
+      "1.0.2"
     ],
     [
       "autoupdate",
-      "1.0.6"
+      "1.1.0"
+    ],
+    [
+      "base64",
+      "1.0.0"
     ],
     [
       "binary-heap",
@@ -18,6 +22,10 @@
     ],
     [
       "blaze-tools",
+      "1.0.0"
+    ],
+    [
+      "boilerplate-generator",
       "1.0.0"
     ],
     [
@@ -34,11 +42,15 @@
     ],
     [
       "deps",
-      "1.0.2"
+      "1.0.3"
     ],
     [
       "ejson",
-      "1.0.1"
+      "1.0.2"
+    ],
+    [
+      "fastclick",
+      "1.0.0"
     ],
     [
       "follower-livedata",
@@ -53,8 +65,24 @@
       "0.0.0"
     ],
     [
+      "ground:localstorage",
+      "0.0.0"
+    ],
+    [
       "ground:minimax",
-      "0.0.9"
+      "0.0.0"
+    ],
+    [
+      "ground:servertime",
+      "0.0.0"
+    ],
+    [
+      "ground:store",
+      "0.0.0"
+    ],
+    [
+      "ground:util",
+      "0.0.0"
     ],
     [
       "html-tools",
@@ -62,7 +90,11 @@
     ],
     [
       "htmljs",
-      "1.0.0"
+      "1.0.1"
+    ],
+    [
+      "http",
+      "1.0.5"
     ],
     [
       "id-map",
@@ -77,28 +109,36 @@
       "1.0.0"
     ],
     [
-      "logging",
-      "1.0.2"
+      "livedata",
+      "1.0.9"
     ],
     [
-      "meteor",
+      "logging",
       "1.0.3"
     ],
     [
+      "meteor",
+      "1.1.0"
+    ],
+    [
       "meteor-platform",
-      "1.0.1"
+      "1.1.0"
     ],
     [
       "minifiers",
-      "1.0.2"
+      "1.1.0"
     ],
     [
       "minimongo",
-      "1.0.2"
+      "1.0.3"
+    ],
+    [
+      "mobile-status-bar",
+      "1.0.0"
     ],
     [
       "mongo",
-      "1.0.4"
+      "1.0.5"
     ],
     [
       "observe-sequence",
@@ -109,12 +149,16 @@
       "1.0.0"
     ],
     [
+      "raix:eventemitter",
+      "0.0.2"
+    ],
+    [
       "random",
       "1.0.0"
     ],
     [
       "reactive-dict",
-      "1.0.1"
+      "1.0.2"
     ],
     [
       "reactive-var",
@@ -122,7 +166,7 @@
     ],
     [
       "reload",
-      "1.0.1"
+      "1.1.0"
     ],
     [
       "retry",
@@ -130,7 +174,7 @@
     ],
     [
       "routepolicy",
-      "1.0.0"
+      "1.0.1"
     ],
     [
       "session",
@@ -146,10 +190,14 @@
     ],
     [
       "templating",
-      "1.0.5"
+      "1.0.6"
     ],
     [
       "tracker",
+      "1.0.2"
+    ],
+    [
+      "ui",
       "1.0.2"
     ],
     [
@@ -157,11 +205,19 @@
       "1.0.0"
     ],
     [
+      "url",
+      "1.0.0"
+    ],
+    [
       "webapp",
-      "1.0.3"
+      "1.1.1"
+    ],
+    [
+      "webapp-hashing",
+      "1.0.0"
     ]
   ],
   "pluginDependencies": [],
-  "toolVersion": "meteor-tool@1.0.27",
+  "toolVersion": "meteor-tool@1.0.31",
   "format": "1.0"
 }
