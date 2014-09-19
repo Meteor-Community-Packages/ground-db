@@ -15,6 +15,13 @@ Regz. RaiX
 
 */
 
+///////////////////////////////// TEST BED /////////////////////////////////////
+var GroundTestPackage = Package['ground:test'] || Package['ground-test'];
+var GroundTest = GroundTestPackage && GroundTestPackage.GroundTest;
+
+var inTestMode = !!GroundTest;
+var inMainTestMode = (inTestMode && GroundTest.isMain);
+
 //////////////////////////////// GROUND DATABASE ///////////////////////////////
 
 // Status of app reload
@@ -440,6 +447,18 @@ var _methodsStorage = Store.create({
   version: 1.0
 });
 
+var _sendMethod = function(method) {
+  _groundUtil.connection.apply(
+    method.method, method.args, method.options, function(err, result) {
+      // We cant fix the missing callbacks made at runtime the
+      // last time the app ran. But we can emit data
+      if (inMainTestMode) console.warn('Main test should not send methods...');
+      // Emit the data we got back here
+      GroundDB.emit('method', method, err, result);
+    }
+  );
+};
+
 // load methods from localstorage and resume the methods
 var _loadMethods = function() {
   // Load methods from storage
@@ -447,7 +466,7 @@ var _loadMethods = function() {
 
     if (err) {
       // XXX:
-    } else {
+    } else if (data) {
 
       // Maxify the data from storage
       var methods = MiniMax.maxify(data);
@@ -523,14 +542,8 @@ var _loadMethods = function() {
             } // else collection would be a normal database
           } // EO collection work
           // Add method to connection
-          _groundUtil.connection.apply(
-                  method.method, method.args, method.options, function(err, result) {
-                    // We cant fix the missing callbacks made at runtime the
-                    // last time the app ran. But we can emit data
+          _sendMethod(method);
 
-                    // Emit the data we got back here
-                    GroundDB.emit('method', method, err, result);
-                  });
         } // EO while methods
       } // EO if stored outstanding methods
 
@@ -538,6 +551,9 @@ var _loadMethods = function() {
       _methodsResumed = true;
       GroundDB.emit('resume', 'methods');
 
+    } else {
+      // Got nothing to resume...
+      _methodsResumed = true;
     }
 
   });
@@ -547,6 +563,7 @@ var _loadMethods = function() {
 // Save the methods into the localstorage
 var _saveMethods = function() {
   if (_methodsResumed) {
+
     // Ok memory is initialized
     GroundDB.emit('cache', 'methods');
 
@@ -639,40 +656,48 @@ var _syncMethods = function() {
 
 /////////////////////// ADD TRIGGERS IN LIVEDATACONNECTION /////////////////////
 
-// Modify connection, well just minor
-_.extend(_groundUtil.connection, {
-  // Define a new super for the methods
-  _gdbSuper: {
-    apply: _groundUtil.connection.apply,
-    _outstandingMethodFinished:
-    _groundUtil.connection._outstandingMethodFinished
-  },
-  // Modify apply
-  apply: function(/* arguments */) {
-    var self = this;
-    // Intercept grounded databases
-  //  var args = _interceptGroundedDatabases(arguments);
-    // Call super
-    self._gdbSuper.apply.apply(self, arguments);
-    // Save methods
-    _saveMethods();
-  },
-  // Modify _outstandingMethodFinished
-  _outstandingMethodFinished: function() {
-    var self = this;
-    // Call super
-    self._gdbSuper._outstandingMethodFinished.apply(self);
-    // We save current status of methods
-    _saveMethods();
-  }
-});
+if (!inMainTestMode) {
+
+  // Modify connection, well just minor
+  _.extend(_groundUtil.connection, {
+    // Define a new super for the methods
+    _gdbSuper: {
+      apply: _groundUtil.connection.apply,
+      _outstandingMethodFinished:
+      _groundUtil.connection._outstandingMethodFinished
+    },
+    // Modify apply
+    apply: function(/* arguments */) {
+      var self = this;
+      // Intercept grounded databases
+    //  var args = _interceptGroundedDatabases(arguments);
+      // Call super
+      self._gdbSuper.apply.apply(self, arguments);
+      // Save methods
+      _saveMethods();
+    },
+    // Modify _outstandingMethodFinished
+    _outstandingMethodFinished: function() {
+      var self = this;
+      // Call super
+      self._gdbSuper._outstandingMethodFinished.apply(self);
+      // We save current status of methods
+      _saveMethods();
+    }
+  });
+
+}
 
 /////////////////////// LOAD CHANGES FROM OTHER TABS ///////////////////////////
 
-// Sync Methods if changed
-_methodsStorage.addListener('storage', function(e) {
+// The main test mode should not interfere with tab sync
+if (!inMainTestMode) {
 
-  // Method calls are delayed a bit for optimization
-  _syncMethods('mehods');
+  // Sync Methods if changed
+  _methodsStorage.addListener('storage', function(e) {
+    // Method calls are delayed a bit for optimization
+    _syncMethods('mehods');
 
-});
+  });
+
+}
