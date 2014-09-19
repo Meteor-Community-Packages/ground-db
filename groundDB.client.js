@@ -36,6 +36,10 @@ GroundDB = function(name, options) {
   // Accepts smart collections by Arunoda Susiripala
   var self = this;
 
+  // Check if user used the "new" keyword
+  if (!(self instanceof GroundDB))
+    throw new Error('GroundDB expects the use of the "new" keyword');
+
   // Make sure we got some options
   options = options || {};
 
