@@ -62,7 +62,7 @@
     ],
     [
       "ground:dictionary",
-      "0.0.0"
+      "0.0.1"
     ],
     [
       "ground:localstorage",
@@ -70,7 +70,7 @@
     ],
     [
       "ground:minimax",
-      "0.0.0"
+      "0.0.2"
     ],
     [
       "ground:servertime",
