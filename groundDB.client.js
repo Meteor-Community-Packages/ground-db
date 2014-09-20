@@ -22,6 +22,19 @@ var GroundTest = GroundTestPackage && GroundTestPackage.GroundTest;
 var inTestMode = !!GroundTest;
 var inMainTestMode = (inTestMode && GroundTest.isMain);
 
+var test = {
+  log: function(/* arguments */) {
+    if (inTestMode) {
+      GroundTest.log.apply(GroundTest, _.toArray(arguments));
+    }
+  },
+  debug: function(/* arguments */) {
+    if (inTestMode) {
+      GroundTest.debug.apply(GroundTest, _.toArray(arguments));
+    }
+  }
+};
+
 //////////////////////////////// GROUND DATABASE ///////////////////////////////
 
 // Status of app reload
@@ -452,11 +465,22 @@ var _methodsStorage = Store.create({
 });
 
 var _sendMethod = function(method) {
+  // Send a log message first to the test
+  test.log('SEND', JSON.stringify(method));
+
+  if (inMainTestMode) console.warn('Main test should not send methods...');
+
   _groundUtil.connection.apply(
     method.method, method.args, method.options, function(err, result) {
       // We cant fix the missing callbacks made at runtime the
       // last time the app ran. But we can emit data
-      if (inMainTestMode) console.warn('Main test should not send methods...');
+
+      if (err) {
+        test.log('RETURNED ERROR', JSON.stringify(method), err.message);
+      } else {
+        test.log('RETURNED METHOD', JSON.stringify(method));
+      }
+
       // Emit the data we got back here
       GroundDB.emit('method', method, err, result);
     }
