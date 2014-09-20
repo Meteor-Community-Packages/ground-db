@@ -4,7 +4,11 @@
 
 // Wrap insert
 GroundDB.prototype.insert = function(/* arguments */) {
-  return this.collection.insert.apply(this.collection, _.toArray(arguments));
+  var args = _.toArray(arguments);
+  // XXX: This is a bit strange - its the only way of making sure the _id is
+  // sent to the server?
+  if (!args[0]._id) args[0]._id = Random.id();
+  return this.collection.insert.apply(this.collection, args);
 };
 
 // Wrap update
