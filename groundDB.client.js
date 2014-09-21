@@ -696,14 +696,18 @@ if (!inMainTestMode) {
     // Modify apply
     apply: function(/* arguments */) {
       var self = this;
+      // Convert arguments to array
+      var args = _.toArray(arguments);
       // Intercept grounded databases
-      if (!_skipThisMethod[arguments[0]])
-        test.debug('APPLY', JSON.stringify(_groundUtil.toArray(arguments)));
-    //  var args = _interceptGroundedDatabases(arguments);
+      if (!_skipThisMethod[args[0]])
+        test.debug('APPLY', JSON.stringify(_groundUtil.toArray(args)));
+    //  var args = _interceptGroundedDatabases(args);
       // Call super
-      self._gdbSuper.apply.apply(self, arguments);
+      var result = self._gdbSuper.apply.apply(self, args);
       // Save methods
       _saveMethods();
+      // return the result
+      return result;
     },
     // Modify _outstandingMethodFinished
     _outstandingMethodFinished: function() {
@@ -712,6 +716,7 @@ if (!inMainTestMode) {
       self._gdbSuper._outstandingMethodFinished.apply(self);
       // We save current status of methods
       _saveMethods();
+      // _outstandingMethodFinished dont return anything
     }
   });
 
