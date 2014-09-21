@@ -15,7 +15,6 @@ Package.on_use(function (api) {
     api.use([
       'meteor',
       'underscore',
-      'random',
       'minimongo',
       'ejson',
       'ground:util@0.0.1',
@@ -38,7 +37,6 @@ Package.on_use(function (api) {
     api.use([
       'meteor',
       'underscore',
-      'random',
       'minimongo',
       'ejson',
       'ground-util',
