@@ -25,12 +25,12 @@ var inMainTestMode = (inTestMode && GroundTest.isMain);
 var test = {
   log: function(/* arguments */) {
     if (inTestMode) {
-      GroundTest.log.apply(GroundTest, _.toArray(arguments));
+      GroundTest.log.apply(GroundTest, _groundUtil.toArray(arguments));
     }
   },
   debug: function(/* arguments */) {
     if (inTestMode) {
-      GroundTest.debug.apply(GroundTest, _.toArray(arguments));
+      GroundTest.debug.apply(GroundTest, _groundUtil.toArray(arguments));
     }
   }
 };
@@ -234,7 +234,7 @@ GroundDB.prototype._checkDocs = function(a) {
   //   c[key] = doc;
   // }
 
-  _.each(a, function(doc, key) {
+  _groundUtil.each(a, function(doc, key) {
     c[key] = doc;
   });
   return c;
@@ -245,7 +245,7 @@ GroundDB.prototype._checkDocs = function(a) {
 GroundDB.prototype.removeLocalOnly = function() {
   var self = this;
 
-  _.each(self._localOnly, function(isLocalOnly, id) {
+  _groundUtil.each(self._localOnly, function(isLocalOnly, id) {
     if (isLocalOnly) {
       self._collection.remove({ _id: id });
       delete self._localOnly[id];
@@ -272,7 +272,7 @@ GroundDB.prototype._loadDatabase = function() {
       var docs = data && MiniMax.maxify(data) || {};
 
       // Initialize client documents
-      _.each(self._checkDocs( docs || {} ), function(doc) {
+      _groundUtil.each(self._checkDocs( docs || {} ), function(doc) {
         // Test if document allready exists, this is a rare case but accounts
         // sometimes adds data to the users database, eg. if "users" are grounded
         var exists = self._collection.findOne({ _id: doc._id });
@@ -322,12 +322,11 @@ GroundDB.prototype._saveDatabase = function() {
 };
 
 
-// This is an overridable method for hooking on to the GroundDB events
-
-GroundDB.ready = function() {
-  _groundUtil.subscriptionsReadyDeps.depend();
-  return _groundUtil.subscriptionsReady;
-};
+// Reactive variable containing a boolean flag, true == all subscriptions have
+// been loaded
+// XXX: this should be a bit more finegrained eg. pr. collection, but thats not
+// possible yet
+GroundDB.ready = _groundUtil.allSubscriptionsReady;
 
 
 // Methods to skip from caching
@@ -359,7 +358,7 @@ var _getMethodsList = function() {
   var methods = [];
   // Made a public API to disallow caching of some method calls
   // Convert the data into nice array
-  _.each(_groundUtil.connection._methodInvokers, function(method) {
+  _groundUtil.each(_groundUtil.connection._methodInvokers, function(method) {
     if (!_skipThisMethod[method._message.method]) {
       // Dont cache login or getServerTime calls - they are spawned pr. default
       methods.push({
@@ -505,7 +504,7 @@ var _loadMethods = function() {
       // If any methods outstanding
       if (methods) {
         // Iterate over array of methods
-        //_.each(methods, function(method) {
+        //_groundUtil.each(methods, function(method) {
         while (methods.length) {
           // FIFO buffer
           var method = methods.shift();
@@ -651,7 +650,7 @@ GroundDB.prototype._syncDatabase = function() {
             }
           });
 
-          _.each(newDocs, function (doc) {
+          _groundUtil.each(newDocs, function (doc) {
             // insert doc
             self._collection.insert(doc);
           });
@@ -687,7 +686,7 @@ var _syncMethods = function() {
 if (!inMainTestMode) {
 
   // Modify connection, well just minor
-  _.extend(_groundUtil.connection, {
+  _groundUtil.extend(_groundUtil.connection, {
     // Define a new super for the methods
     _gdbSuper: {
       apply: _groundUtil.connection.apply,
@@ -698,6 +697,8 @@ if (!inMainTestMode) {
     apply: function(/* arguments */) {
       var self = this;
       // Intercept grounded databases
+      if (!_skipThisMethod[arguments[0]])
+        test.debug('APPLY', JSON.stringify(_groundUtil.toArray(arguments)));
     //  var args = _interceptGroundedDatabases(arguments);
       // Call super
       self._gdbSuper.apply.apply(self, arguments);
