@@ -3,31 +3,31 @@
 //////////////////////////////////////////////////////////////////////////////
 
 // Wrap the Event Emitter Api "on"
-GroundDB.prototype.on = function(/* arguments */) {
+_groundUtil.Collection.prototype.on = function(/* arguments */) {
   return this.eventemitter.on.apply(this.eventemitter, _.toArray(arguments));
 };
 
 // Wrap the Event Emitter Api "once"
-GroundDB.prototype.once = function(/* arguments */) {
+_groundUtil.Collection.prototype.once = function(/* arguments */) {
   return this.eventemitter.once.apply(this.eventemitter, _.toArray(arguments));
 };
 
 // Wrap the Event Emitter Api "off"
-GroundDB.prototype.off = function(/* arguments */) {
+_groundUtil.Collection.prototype.off = function(/* arguments */) {
   return this.eventemitter.off.apply(this.eventemitter, _.toArray(arguments));
 };
 
 // Wrap the Event Emitter Api "emit"
-GroundDB.prototype.emit = function(/* arguments */) {
+_groundUtil.Collection.prototype.emit = function(/* arguments */) {
   return this.eventemitter.emit.apply(this.eventemitter, _.toArray(arguments));
 };
 
 
 // Add api helpers
-GroundDB.prototype.addListener = GroundDB.prototype.on;
-GroundDB.prototype.removeListener = GroundDB.prototype.off;
-GroundDB.prototype.removeAllListeners = GroundDB.prototype.off;
+_groundUtil.Collection.prototype.addListener = _groundUtil.Collection.prototype.on;
+_groundUtil.Collection.prototype.removeListener = _groundUtil.Collection.prototype.off;
+_groundUtil.Collection.prototype.removeAllListeners = _groundUtil.Collection.prototype.off;
 
 // Add jquery like helpers
-GroundDB.prototype.one = GroundDB.prototype.once;
-GroundDB.prototype.trigger = GroundDB.prototype.emit;
+_groundUtil.Collection.prototype.one = _groundUtil.Collection.prototype.once;
+_groundUtil.Collection.prototype.trigger = _groundUtil.Collection.prototype.emit;

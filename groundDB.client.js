@@ -1,5 +1,3 @@
-"use strict";
-
 /*
 
 GroundDB is a thin layer providing Meteor offline database and methods
@@ -43,41 +41,108 @@ var _isReloading = false;
 // Add a pointer register of grounded databases
 var _groundDatabases = {};
 
-GroundDB = function(name, options) {
+// This function will add a emitter for the "changed" event
+var _addChangedEmitter = function() {
+  var self = this;
+  // Reactive deps for when data changes
+  var _dataChanged = new Deps.Dependency();
 
-  // Inheritance Meteor Collection can be set by options.collection
-  // Accepts smart collections by Arunoda Susiripala
+  var _changeData = function() { _dataChanged.changed(); };
+
+  Deps.autorun(function() {
+    // Depend on data change
+    _dataChanged.depend();
+    // Emit changed
+    self.collection.emit('changed');
+  });
+
+  // Observe all changes and rely on the less agressive observer system for
+  // providing a reasonable update frequens
+  self.collection.find().observe({
+    'added': _changeData,
+    'changed': _changeData,
+    'removed': _changeData
+  });
+};
+
+// Clean up the local data and align to the subscription
+var _cleanUpLocalData = function() {
+  var self = this;
+  // Flag marking if the local data is cleaned up to match the subscription
+  self.isCleanedUp = false;
+
+  Deps.autorun(function(computation) {
+    if (GroundDB.ready() && !self.isCleanedUp) {
+      // If all subscriptions have updated the system then remove all local only
+      // data?
+      // console.log('Clean up ' + self.name);
+      self.isCleanedUp = true;
+      _removeLocalOnly.call(self);
+
+      // Stop this listener
+      computation.stop();
+    }
+  });
+};
+
+// Setup the syncronization of tabs
+var _setupTabSyncronizer = function() {
+  var self = this;
+  // We check to see if database sync is supported, if so we sync the database
+  // if data has changed in other tabs
+  if (typeof _syncDatabase === 'function') {
+
+    // Listen for data changes
+    self.storage.addListener('storage', function(e) {
+
+      // Database changed in another tab - sync this db
+      _syncDatabase.call(self);
+
+    });
+
+  }
+};
+
+// Rig the change listener and make sure to store the data to local storage
+var _setupDataStorageOnChange = function() {
+  var self = this;
+
+  // One timeout pointer for database saves
+  self._saveDatabaseDelay = new _groundUtil.OneTimeout();
+  // Add listener, is triggered on data change
+  self.collection.addListener('changed', function(e) {
+
+    // Store the database in store when ever theres a change
+    // the _saveDatabase will throttle to optimize
+    _saveDatabase.call(self);
+
+  });
+};
+
+_groundDbConstructor = function(collection, options) {
   var self = this;
 
   // Check if user used the "new" keyword
-  if (!(self instanceof GroundDB))
-    throw new Error('GroundDB expects the use of the "new" keyword');
+  if (!(self instanceof _groundDbConstructor))
+    throw new Error('_groundDbConstructor expects the use of the "new" keyword');
 
-  // Make sure we got some options
-  options = options || {};
-
-  // Either name is a Meteor collection or we create a new Meteor collection
-  if (name instanceof _groundUtil.Collection) {
-    self.collection = name;
-  } else {
-    self.collection = new _groundUtil.Collection(name, options);
-  }
+  self.collection = collection;
 
   // Set GroundDB prefix for localstorage
   var _prefix = options && options.prefix || '';
 
   // Set helper to connection
-  self.connection = self.collection._connection;
+  self.connection = collection._connection;
 
   // Set helper to minimongo collection
-  self._collection = self.collection._collection;
+  self._collection = collection._collection;
 
   // Is this an offline client only database?
   self.offlineDatabase = !!(self.connection === null);
 
   // Initialize collection name
   // XXX: Using null as a name is a problem - only one may be called null
-  self.name = (self.collection._name)? self.collection._name : 'null';
+  self.name = (collection._name)? collection._name : 'null';
 
   /////// Finally got a name... and rigged
 
@@ -98,15 +163,17 @@ GroundDB = function(name, options) {
     migration: options.migration
   });
 
-  // Rig an event handler
-  self.eventemitter = new EventEmitter();
+  // Rig an event handler on Meteor.Collection
+  collection.eventemitter = new EventEmitter();
 
   // Add to pointer register
+  // XXX: should we throw an error if already found?
+  // Store.create will prop. throw an error before...
   _groundDatabases[ self.name ] = self;
 
   // We have to allow the minimongo collection to contain data before
   // subscriptions are ready
-  self._hackMeteorUpdate();
+  _hackMeteorUpdate.call(self);
 
   // Flag true/false depending if database is loaded from local
   self._databaseLoaded = false;
@@ -114,75 +181,55 @@ GroundDB = function(name, options) {
   // Map local-only - this makes sure that localstorage matches remote loaded db
   self._localOnly = {};
 
-  // Flag marking if the local data is cleaned up to match the subscription
-  self.isCleanedUp = false;
+  // Clean up the database and align to subscription
+  _cleanUpLocalData.call(self);
 
-  Deps.autorun(function() {
-    if (GroundDB.ready() && !self.isCleanedUp) {
-      // If all subscriptions have updated the system then remove all local only
-      // data?
-      // console.log('Clean up ' + self.name);
-      self.isCleanedUp = true;
-      self.removeLocalOnly();
-    }
-  });
 
-  // One timeout pointer for database saves
-  self._saveDatabaseDelay = new _groundUtil.OneTimeout();
+  // Add the emitter of "changed" events
+  _addChangedEmitter.call(self);
 
-  // Reactive deps for when data changes
-  var _dataChanged = new Deps.Dependency();
-
-  var _changeData = function() { _dataChanged.changed(); };
-
-  Deps.autorun(function() {
-    // Depend on data change
-    _dataChanged.depend();
-    // Emit changed
-    self.emit('changed');
-  });
-
-  // Observe all changes and rely on the less agressive observer system for
-  // providing a reasonable update frequens
-  self.find().observe({
-    'added': _changeData,
-    'changed': _changeData,
-    'removed': _changeData
-  });
-
-  // Add listener, is triggered on data change
-  self.addListener('changed', function(e) {
-
-    // Store the database in store
-    self._saveDatabase();
-
-  });
+  // The data changes should be stored in storage
+  _setupDataStorageOnChange.call(self);
 
   // Load the database as soon as possible
-  self._loadDatabase();
+  _loadDatabase.call(self);
 
-  // We check to see if database sync is supported, if so we sync the database
-  // if data has changed in other tabs
-  if (self._syncDatabase) {
+  // Add tab syncronizer
+  _setupTabSyncronizer.call(self);
 
-    // Listen for data changes
-    self.storage.addListener('storage', function(e) {
-
-      // Database changed in another tab - sync this db
-      self._syncDatabase();
-
-    });
-
-  }
-
-  // return self;
 };
 
-// TODO: change when linker is official
-window.GroundDB = GroundDB;
+GroundDB = function(name, options) {
+  var self;
+
+  // Inheritance Meteor Collection can be set by options.collection
+  // Accepts smart collections by Arunoda Susiripala
+  // Check if user used the "new" keyword
+
+
+  // Make sure we got some options
+  options = options || {};
+
+  // Either name is a Meteor collection or we create a new Meteor collection
+  if (name instanceof _groundUtil.Collection) {
+    self = name;
+  } else {
+    self = new _groundUtil.Collection(name, options);
+  }
+
+  // Throw an error if something went wrong
+  if (!(self instanceof _groundUtil.Collection))
+    throw new Error('GroundDB expected a Mongo.Collection');
+
+  self.grounddb = new _groundDbConstructor(self, options);
+
+  return self;
+};
 
 /////
-GroundDB.prototype._hackMeteorUpdate = function() {
+// Private Methods
+
+var _hackMeteorUpdate = function() {
   var self = this;
 
   // Super container
@@ -221,7 +268,7 @@ GroundDB.prototype._hackMeteorUpdate = function() {
 
 // We dont trust the localstorage so we make sure it doesn't contain
 // duplicated id's - primary a problem i FF
-GroundDB.prototype._checkDocs = function(a) {
+var _checkDocs = function(a) {
   var self = this;
 
   var c = {};
@@ -242,7 +289,7 @@ GroundDB.prototype._checkDocs = function(a) {
 
 // At some point we can do a remove all local-only data? Making sure that we
 // Only got the same data as the subscription
-GroundDB.prototype.removeLocalOnly = function() {
+var _removeLocalOnly = function() {
   var self = this;
 
   _groundUtil.each(self._localOnly, function(isLocalOnly, id) {
@@ -254,12 +301,12 @@ GroundDB.prototype.removeLocalOnly = function() {
 };
 
 // Bulk Load database from local to memory
-GroundDB.prototype._loadDatabase = function() {
+var _loadDatabase = function() {
   var self = this;
   // Then load the docs into minimongo
 
   // Emit event
-  self.emit('resume');
+  self.collection.emit('resume');
   GroundDB.emit('resume', 'database', self);
 
   // Load object from localstorage
@@ -272,7 +319,7 @@ GroundDB.prototype._loadDatabase = function() {
       var docs = data && MiniMax.maxify(data) || {};
 
       // Initialize client documents
-      _groundUtil.each(self._checkDocs( docs || {} ), function(doc) {
+      _groundUtil.each(_checkDocs.call(self, docs || {} ), function(doc) {
         // Test if document allready exists, this is a rare case but accounts
         // sometimes adds data to the users database, eg. if "users" are grounded
         var exists = self._collection.findOne({ _id: doc._id });
@@ -298,7 +345,7 @@ GroundDB.prototype._loadDatabase = function() {
 
 // Bulk Save database from memory to local, meant to be as slim, fast and
 // realiable as possible
-GroundDB.prototype._saveDatabase = function() {
+var _saveDatabase = function() {
   var self = this;
   // If data loaded from localstorage then its ok to save - otherwise we
   // would override with less data
@@ -308,7 +355,7 @@ GroundDB.prototype._saveDatabase = function() {
       // a minor lag in terms of localstorage updating but it limits the num
       // of saves to the database
       // Make sure our database is loaded
-      self.emit('cachedatabase');
+      self.collection.emit('cachedatabase');
       GroundDB.emit('cache', 'database', self);
 
       var minifiedDb = MiniMax.minify(_groundUtil.getDatabaseMap(self));
@@ -622,24 +669,25 @@ var syncDatabaseDelay = new _groundUtil.OneTimeout();
 // Offline client only databases will sync a bit different than normal
 // This function is a bit hard - but it works - optimal solution could be to
 // have virtual method calls it would complicate things
-GroundDB.prototype._syncDatabase = function() {
+var _syncDatabase = function() {
   var self = this;
   // We set a small delay in case of more updates within the wait
   syncDatabaseDelay.oneTimeout(function() {
 //    if (self && (self.offlineDatabase === true || !Meteor.status().connected)) {
     if (self) {
       // Add event hook
-      self.emit('sync');
+      self.collection.emit('sync');
       GroundDB.emit('sync', 'database', self);
       // Hard reset database?
       self.storage.getItem('data', function(err, data) {
         if (err) {
           //
+          throw err;
         } else {
           // Get the data back in size
           var newDocs = MiniMax.maxify(data);
 
-          self.find().forEach(function(doc) {
+          self.collection.find().forEach(function(doc) {
             // Remove document
             self._collection.remove(doc._id);
             // If found in new documents then hard update
