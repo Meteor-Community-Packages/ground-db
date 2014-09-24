@@ -119,6 +119,7 @@ var _setupDataStorageOnChange = function() {
   });
 };
 
+// This is the actual grounddb instance
 _groundDbConstructor = function(collection, options) {
   var self = this;
 
@@ -199,6 +200,7 @@ _groundDbConstructor = function(collection, options) {
 
 };
 
+// Global helper for applying grounddb on a collection
 GroundDB = function(name, options) {
   var self;
 
@@ -221,14 +223,75 @@ GroundDB = function(name, options) {
   if (!(self instanceof _groundUtil.Collection))
     throw new Error('GroundDB expected a Mongo.Collection');
 
+  // Add grounddb to the collection
   self.grounddb = new _groundDbConstructor(self, options);
 
+  // Return grounded collection - We dont return this eg if it was an instance
+  // of GroundDB
   return self;
 };
 
-/////
+////////////////////////////////////////////////////////////////////////////////
 // Private Methods
+////////////////////////////////////////////////////////////////////////////////
 
+/*
+
+TODO: Implement conflict resoultion
+
+The _hackMeteorUpdate should be modified to resolve conflicts via default or
+custom conflict handler.
+
+The first thing we have to do is to solve the "remove" operation - Its quite
+tricky and there are a couple of patterns we could follow:
+
+1. Create a register for removed docs - but how long should we store this data?
+2. Stop the real remove, add a removedAt serverStamp in an empty doc instead
+3. Find a way to get a removedAt timestamp in another way
+
+So we cant trust that having the data at the server makes everything ok,
+
+---
+The scenario or question to answer is:
+
+clientA creates a document and goes offline
+clientB removes the document
+after a day, a month or years?:
+clientA edits the document and goes online
+
+So what should happen?
+---
+
+If we want the newest change to win, then the document should be restored
+
+If clientA and clientB is the same user we would assume they kinda know what
+they are doing, but if you edit the docuemnt after you removed it - it seems
+like an user error removing the document.
+
+But now time comes into play, if it was 6 month ago the user removed the document,
+and now edits it offline then going online would still restore the document?
+This raises the question of how long time should we store details about removed
+documents... and where?
+
+Should destructive actions be comprimised, rather dont remove?
+
+Now if the user updates a document - should we try to merge the data, sometimes
+yes, sometimes no.
+
+Never the less - this is an example of the power a custom conflict handler
+should have. So the task is to provide the tooling and data for the conflict
+handlers.
+
+A conflict handler is really a question about strategy, how the app should
+act in the situation. This is why we are going to have the client-side do this
+work - I mean we could have a strategy for letting the user decide what should
+happen.
+
+The conflict handler should be provided the localVersion and remoteVersion,
+it should then return the winning result - might be in a callback allowing
+sync + async behaviours?
+
+*/
 var _hackMeteorUpdate = function() {
   var self = this;
 
