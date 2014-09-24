@@ -1,4 +1,4 @@
-ground:db [![Build Status](https://travis-ci.org/GroundMeteor/Meteor-GroundDB.png?branch=master)](https://travis-ci.org/GroundMeteor/Meteor-GroundDB) [![Donate](https://www.paypalobjects.com/en_US/i/btn/btn_donate_SM.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=Q9S3JT7D8J4PQ)
+ground:db [![Build Status](https://travis-ci.org/GroundMeteor/db.png?branch=master)](https://travis-ci.org/GroundMeteor/db)
 =========
 
 GroundDB is a fast and thin layer providing Meteor offline database and methods - Taking cloud data to the ground.
@@ -16,7 +16,7 @@ GroundDB is like a normal `Meteor.Collection` - but changes and outstanding meth
 ##Features:
 * Light footprint
 * Broad browser support Chrome, Safari, Firefox and Internet Explorer 9
-* Fallback to normal Meteor.Collection if no localstorage
+* Fallback to normal Meteor.Collection if no local storage
 * Resume of changes in collections
 * Resume of methods
 * Works offline updating cross window tabs
