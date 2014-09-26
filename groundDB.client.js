@@ -291,6 +291,18 @@ The conflict handler should be provided the localVersion and remoteVersion,
 it should then return the winning result - might be in a callback allowing
 sync + async behaviours?
 
+So this is focused on servertime stamps - but the interesting thing here could
+also be the focus on versions instead. Much like OT and github does.
+
+But OT will prop. only make sense when all online?
+
+---
+
+Should it be the server that handles conflicts? All the data is available there
+we cant be sure about subscriptions + we could have OT records for each collection
+Creating a conflict resoultion package could be isolated and would work on all
+collections - grounded or not...
+
 */
 var _hackMeteorUpdate = function() {
   var self = this;
