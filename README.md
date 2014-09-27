@@ -1,4 +1,5 @@
 ground:db [![Build Status](https://travis-ci.org/GroundMeteor/db.png?branch=master)](https://travis-ci.org/GroundMeteor/db)
+[![Deps Status](http://checkdeps.meteor.com/badge/GroundMeteor/db/master)](http://checkdeps.meteor.com/GroundMeteor/db) 
 =========
 
 GroundDB is a fast and thin layer providing Meteor offline database and methods - Taking cloud data to the ground.
