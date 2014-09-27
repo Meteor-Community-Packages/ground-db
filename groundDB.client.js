@@ -303,6 +303,8 @@ we cant be sure about subscriptions + we could have OT records for each collecti
 Creating a conflict resoultion package could be isolated and would work on all
 collections - grounded or not...
 
+We could wait until OT is supported in core?
+
 */
 var _hackMeteorUpdate = function() {
   var self = this;

@@ -69,6 +69,7 @@ GroundDB can be applied on client-side only eg.: `new Meteor.Collection(null);`
   // just ground the database and map on suffix `list`
   GroundDB(list, 'list');
 ```
+*You can only have one grounded collection with name null*
 
 ##Support
 Tested on Chrome, Safari, Firefox and IE9 *(though appcache is not supported in IE9 tabs are updated when offline)* - but all browsers that support localstorage *contains a FF safe test of localstorage*
