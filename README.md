@@ -25,42 +25,42 @@ GroundDB is like a normal `Meteor.Collection` - but changes and outstanding meth
 * Uses `EJSON.minify` and `EJSON.maxify` to compress data in localstorage
 * *In the future there will be a customizable conflict handler on the server-side*
 
-##Creating a GroundDB object (variants)
+##Creating a Ground.Collection object (variants)
 ```js
 
   // Return a grounded Meteor.Collection
-  var list = new GroundDB('list');
+  var list = new Ground.Collection('list');
 
   or
 
   // Get the groundDB of existing Meteor.Collection
   var list = new Meteor.Collection('list');
-  var groundList = new GroundDB(list);
+  var groundList = new Ground.Collection(list);
 
   or
 
   // Ground an existing Meteor.Collection  
   var list = new Meteor.Collection('list');
   // just ground the database:
-  GroundDB(list);
+  Ground.Collection(list);
 ```
 *Example of different patterns. Grounding a `Meteor.Collection` will attach the `cache`, `resume` and `cross tabs update offline`*
 
 ##Pure client-side offline databases (variants)
-GroundDB can be applied on client-side only eg.: `new Meteor.Collection(null);`
+Ground.Collection can be applied on client-side only eg.: `new Meteor.Collection(null);`
 ```js
 
   // Creates client-side only database, this one maps on suffix `null`
-  var list = new GroundDB(null);
+  var list = new Ground.Collection(null);
 
   // Creates client-side only database, this one maps on suffix `list` *(Meteor 0.6.5+)*
-  var list = new GroundDB('list', { connection: null });
+  var list = new Ground.Collection('list', { connection: null });
   
   or
 
   // Get the groundDB of existing Meteor.Collection
   var list = new Meteor.Collection(null);
-  var groundList = new GroundDB(list, 'list');
+  var groundList = new Ground.Collection(list, 'list');
 
   or
 

@@ -72,7 +72,7 @@ var _cleanUpLocalData = function() {
   self.isCleanedUp = false;
 
   Deps.autorun(function(computation) {
-    if (GroundDB.ready() && !self.isCleanedUp) {
+    if (Ground.ready() && !self.isCleanedUp) {
       // If all subscriptions have updated the system then remove all local only
       // data?
       // console.log('Clean up ' + self.name);
@@ -129,7 +129,7 @@ _groundDbConstructor = function(collection, options) {
 
   self.collection = collection;
 
-  // Set GroundDB prefix for localstorage
+  // Set Ground.Collection prefix for localstorage
   var _prefix = options && options.prefix || '';
 
   // Set helper to connection
@@ -201,7 +201,7 @@ _groundDbConstructor = function(collection, options) {
 };
 
 // Global helper for applying grounddb on a collection
-GroundDB = function(name, options) {
+Ground.Collection = function(name, options) {
   var self;
 
   // Inheritance Meteor Collection can be set by options.collection
@@ -221,13 +221,13 @@ GroundDB = function(name, options) {
 
   // Throw an error if something went wrong
   if (!(self instanceof _groundUtil.Collection))
-    throw new Error('GroundDB expected a Mongo.Collection');
+    throw new Error('Ground.Collection expected a Mongo.Collection');
 
   // Add grounddb to the collection
   self.grounddb = new _groundDbConstructor(self, options);
 
   // Return grounded collection - We dont return this eg if it was an instance
-  // of GroundDB
+  // of Ground.Collection
   return self;
 };
 
@@ -384,7 +384,7 @@ var _loadDatabase = function() {
 
   // Emit event
   self.collection.emit('resume');
-  GroundDB.emit('resume', 'database', self);
+  Ground.emit('resume', 'database', self);
 
   // Load object from localstorage
   self.storage.getItem('data', function(err, data) {
@@ -433,7 +433,7 @@ var _saveDatabase = function() {
       // of saves to the database
       // Make sure our database is loaded
       self.collection.emit('cachedatabase');
-      GroundDB.emit('cache', 'database', self);
+      Ground.emit('cache', 'database', self);
 
       var minifiedDb = MiniMax.minify(_groundUtil.getDatabaseMap(self));
       // Save the collection into localstorage
@@ -450,14 +450,14 @@ var _saveDatabase = function() {
 // been loaded
 // XXX: this should be a bit more finegrained eg. pr. collection, but thats not
 // possible yet
-GroundDB.ready = _groundUtil.allSubscriptionsReady;
+Ground.ready = _groundUtil.allSubscriptionsReady;
 
 
 // Methods to skip from caching
 var _skipThisMethod = { login: true, getServerTime: true };
 
 // Add settings for methods to skip or not when caching methods
-GroundDB.skipMethods = function(methods) {
+Ground.skipMethods = function(methods) {
   if (typeof methods !== 'object') {
     throw new Error('skipMethods expects parametre as object of method names to skip when caching methods');
   }
@@ -469,7 +469,7 @@ GroundDB.skipMethods = function(methods) {
   }
 };
 
-GroundDB.OneTimeout = _groundUtil.OneTimeout;
+Ground.OneTimeout = _groundUtil.OneTimeout;
 
 ///////////////////////////// RESUME METHODS ///////////////////////////////////
 
@@ -525,7 +525,7 @@ var _flushInMemoryMethods = function() {
     }
     if (didFlushSome) {
       // Call the event callback
-      GroundDB.emit('flush', 'methods');
+      Ground.emit('flush', 'methods');
     }
 
   }
@@ -565,7 +565,7 @@ var _getMethodUpdates = function(newMethods) {
         // Ok out of oldMethods this is a new method call
         result.push(newMethods[i]);
 
-        GroundDB.emit('methodcall', newMethods[i]);
+        Ground.emit('methodcall', newMethods[i]);
       }
     } // EO for iteration
 
@@ -605,7 +605,7 @@ var _sendMethod = function(method) {
       }
 
       // Emit the data we got back here
-      GroundDB.emit('method', method, err, result);
+      Ground.emit('method', method, err, result);
     }
   );
 };
@@ -700,7 +700,7 @@ var _loadMethods = function() {
 
       // Dispatch methods loaded event
       _methodsResumed = true;
-      GroundDB.emit('resume', 'methods');
+      Ground.emit('resume', 'methods');
 
     } else {
       // Got nothing to resume...
@@ -716,7 +716,7 @@ var _saveMethods = function() {
   if (_methodsResumed) {
 
     // Ok memory is initialized
-    GroundDB.emit('cache', 'methods');
+    Ground.emit('cache', 'methods');
 
     // Save outstanding methods to localstorage
     var methods = _getMethodsList();
@@ -754,7 +754,7 @@ var _syncDatabase = function() {
     if (self) {
       // Add event hook
       self.collection.emit('sync');
-      GroundDB.emit('sync', 'database', self);
+      Ground.emit('sync', 'database', self);
       // Hard reset database?
       self.storage.getItem('data', function(err, data) {
         if (err) {
@@ -798,7 +798,7 @@ var _syncMethods = function() {
   // of db access required in most operations, we wait a sec?
   syncMethodsDelay.oneTimeout(function() {
     // Add event hook
-    GroundDB.emit('sync', 'methods');
+    Ground.emit('sync', 'methods');
     // Resume methods
     _loadMethods();
     // Resume normal writes

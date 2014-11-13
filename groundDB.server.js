@@ -11,8 +11,7 @@ Meteor.server = Meteor.server || Meteor.default_server;
 
 //////////////////////////////// GROUND DATABASE ///////////////////////////////
 
-// @export GroundDB
-GroundDB = function(name, options) {
+Ground.Collection = function(name, options) {
   // Inheritance Meteor Collection can be set by options.collection
   // Accepts smart collections by Arunoda Susiripala
   var self;
