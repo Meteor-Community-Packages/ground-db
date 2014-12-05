@@ -9,7 +9,7 @@ function equals(a, b) {
 
 Tinytest.add('GroundDB - test environment', function(test) {
 
-  var a = new GroundDB('test', {
+  var a = new Ground.Collection('test', {
     prefix: 'foobar',
     connection: null
   });
