@@ -514,17 +514,28 @@ var _getMethodsList = function() {
   var methods = [];
   // Made a public API to disallow caching of some method calls
   // Convert the data into nice array
-  _groundUtil.each(_groundUtil.connection._methodInvokers, function(method) {
-    if (!_skipThisMethod[method._message.method]) {
-      // Dont cache login or getServerTime calls - they are spawned pr. default
-      methods.push({
-        // Format the data
-        method: method._message.method,
-        args: method._message.params,
-        options: { wait: method._wait }
-      });
-    }
+
+  // We iterate over the connections that have resumable methods
+  _groundUtil.each(_methodResumeConnections, function(connection) {
+    // We run through the method invokers
+    _groundUtil.each(connection._methodInvokers, function(method) {
+      // Get the method name
+      var name = method._message.method;
+      // Check that this method is resumeable and on the correct connection
+      if (_allowMethodResumeMap[name] === connection) {
+        // Push the method
+        methods.push({
+          // Format the data
+          method: name,
+          args: method._message.params,
+          options: { wait: method._wait }
+        });
+
+      }
+
+    });
   });
+
   return methods;
 };
 
