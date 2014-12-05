@@ -556,7 +556,7 @@ var _flushInMemoryMethods = function() {
     // Check to see if we should skip methods
     for (var i = 0; i < _groundUtil.connection._outstandingMethodBlocks.length; i++) {
       var method = _groundUtil.connection._outstandingMethodBlocks[i];
-      if (method && method._message && !_skipThisMethod[method._message.method]) {
+      if (method && method._message && _allowMethodResumeMap[method._message.method]) {
         // Clear invoke callbacks
 //    _groundUtil.connection._outstandingMethodBlocks = [];
         delete _groundUtil.connection._outstandingMethodBlocks[i];
@@ -630,13 +630,13 @@ var _methodsStorage = Store.create({
   version: 1.0
 });
 
-var _sendMethod = function(method) {
+var _sendMethod = function(method, connection) {
   // Send a log message first to the test
   test.log('SEND', JSON.stringify(method));
 
   if (inMainTestMode) console.warn('Main test should not send methods...');
 
-  _groundUtil.connection.apply(
+  connection.apply(
     method.method, method.args, method.options, function(err, result) {
       // We cant fix the missing callbacks made at runtime the
       // last time the app ran. But we can emit data
@@ -653,103 +653,100 @@ var _sendMethod = function(method) {
   );
 };
 
-// load methods from localstorage and resume the methods
-var _loadMethods = function() {
-  // Load methods from storage
-  _methodsStorage.getItem('methods', function(err, data) {
+var waitingMethods = [];
 
-    if (err) {
-      // XXX:
-    } else if (data) {
+// We may end in a situation where things have changed eg. if collections are
+// renamed or left out in the app. We make sure that ground db will try 5 time
+// times and then have the missing methods die.
+// The correct thing in the future would prop. be to have the conflict resolution
+// create patch calls instead of resume.
+var resumeAttemptsLeft = 5;
 
-      // Maxify the data from storage
-      var methods = MiniMax.maxify(data);
+var resumeWaitingMethods = function() {
+  var missing = [];
 
-      // We are only going to submit the diff
-      methods = _getMethodUpdates(methods);
+  resumeAttemptsLeft--;
 
-      // If any methods outstanding
-      if (methods) {
-        // Iterate over array of methods
-        //_groundUtil.each(methods, function(method) {
-        while (methods.length) {
-          // FIFO buffer
-          var method = methods.shift();
+  // Resume each method
+  _groundUtil.each(waitingMethods, function(method) {
+    // name helper for the method
+    var name = method.method;
+    test.log('RESUME', 'Load method "' + name + '"');
+    // Get the connection from the allow method resume
+    var methodConnection = _allowMethodResumeMap[name];
+    // Run it in fenced mode since the changes have already been applied
+    // locally
+    if (methodConnection) {
 
-          // parse "/collection/command" or "command"
-          var params = method.method.split('/');
-          var collection = params[1];
-          var command = params[2];
-          // Do work on collection
-          if (collection && command) {
-            // we are going to run an simulated insert - this is allready in db
-            // since we are running local, so we remove it from the collection first
-            if (_groundDatabases[collection]) {
-              // The database is registered as a ground database
-
-              // Set method doc id to _id or first argument, if none is found ''
-              var methodDocId = '';
-
-              // Set selector
-              var selector = method.args && method.args[0];
-
-              // If the method got any selector set we want to find the id of
-              // the document if possible
-              if (selector) {
-
-                // if _id is set then use that
-                if (selector._id) {
-
-                  // Use _id
-                  methodDocId = selector._id;
-
-                } else if (selector === ''+selector) {
-
-                  // If the selector is a string we assume that this must be
-                  // an id
-                  methodDocId = selector;
-                }
-              }
-
-              // Parse the id
-              var mongoId = _groundUtil.idParse(methodDocId);
-
-              // Get the document on the client - if found
-              var doc = _groundDatabases[collection].collection._collection.findOne(mongoId);
-
-              if (doc) {
-                // document found
-                // This is a problem: insert stub simulation, would fail so we
-                // remove the added document from client and let the method call
-                // re-insert it in simulation
-                if (command === 'insert') {
-                  // Remove the item from ground database so it can be correctly
-                  // inserted
-                  _groundDatabases[collection].collection._collection.remove(mongoId);
-                  // We mark this as remote since we will be corrected if it's
-                  // Wrong + If we don't the data is lost in this session.
-                  // So we remove any localOnly flags
-                  delete _groundDatabases[collection]._localOnly[mongoId];
-                } // EO handle insert
-
-              } // EO Else no doc found in client database
-            } // else collection would be a normal database
-          } // EO collection work
-          // Add method to connection
-          _sendMethod(method);
-
-        } // EO while methods
-      } // EO if stored outstanding methods
-
-      // Dispatch methods loaded event
-      _methodsResumed = true;
-      Ground.emit('resume', 'methods');
+      _groundUtil.connection.stubFence(name, function() {
+        // Add method to connection
+        _sendMethod(method, methodConnection);
+      });
 
     } else {
-      // Got nothing to resume...
-      _methodsResumed = true;
+      // XXX: make sure we keep order
+      // TODO: Check if we should use push or unshift
+      missing.push(method);
+      test.log('RESUME', 'Missing method "' + name + '" - retry later');
+      console.warn('Ground method resume: Cannot resume "' + name + '" connection not rigged yet, retry later');
+    }
+  });
+
+  // Keep track of missing methods
+  waitingMethods = missing;
+
+  // If no waiting methods - then we must be done?
+  if (!_methodsResumed && !waitingMethods.length || !resumeAttemptsLeft) {
+    // Methods have resumed
+    _methodsResumed = true;
+    _methodsResumedDeps.changed();
+  }
+
+};
+
+
+var loadMissingMethods = function(callback) {
+  _methodsStorage.getItem('methods', function(err, data) {
+    test.log('RESUME', 'methods loaded into memory');
+    if (err) {
+      // XXX:
+      callback(err);
+    } else if (data) {
+      // Maxify the data from storage
+      // We are only going to submit the diff
+      // Set missing methods
+      waitingMethods = _getMethodUpdates(MiniMax.maxify(data));
     }
 
+    callback();
+  });
+};
+
+// load methods from localstorage and resume the methods
+var _loadMethods = function() {
+
+  loadMissingMethods(function(err) {
+    if (err) {
+      test.log('RESUME', 'Could not load missing methods into memory', err);
+    } else {
+
+      // Try to resume missing methods now
+      resumeWaitingMethods();
+
+      // If not all methods are resumed then try until success
+      if (!_methodsResumed) {
+
+        var interval = Meteor.setInterval(function() {
+          // Try to resume missing methods
+          resumeWaitingMethods();
+
+          // If methods are resumed then stop this
+          if (_methodsResumed) Meteor.clearInterval(interval);
+        }, 1000);
+
+      }
+
+    }
   });
 
 }; // EO load methods
@@ -763,7 +760,7 @@ var _saveMethods = function() {
 
     // Save outstanding methods to localstorage
     var methods = _getMethodsList();
-
+//test.log('SAVE METHODS', JSON.stringify(methods));
     _methodsStorage.setItem('methods', MiniMax.minify(methods), function(err, result) {
       // XXX:
     });
@@ -778,6 +775,7 @@ Meteor.startup(function() {
   // TODO: Do we have a better way, instead of depending on time should depend
   // on en event.
   Meteor.setTimeout(function loadMethods() {
+    test.log('INIT LOAD METHODS');
     _loadMethods();
   }, 500);
 });
@@ -842,7 +840,13 @@ var _syncMethods = function() {
   syncMethodsDelay.oneTimeout(function() {
     // Add event hook
     Ground.emit('sync', 'methods');
+    // Load the offline data into our memory
+    _groundUtil.each(_groundDatabases, function(collection, name) {
+      test.log('SYNC DB', name);
+      _loadDatabase.call(collection);
+    });
     // Resume methods
+    test.log('SYNC METHODS');
     _loadMethods();
     // Resume normal writes
     _isReloading = false;
