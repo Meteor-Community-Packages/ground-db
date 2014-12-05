@@ -6,7 +6,7 @@
     ],
     [
       "autoupdate",
-      "1.1.2"
+      "1.1.3"
     ],
     [
       "base64",
@@ -18,7 +18,7 @@
     ],
     [
       "blaze",
-      "2.0.2"
+      "2.0.3"
     ],
     [
       "blaze-tools",
@@ -38,7 +38,7 @@
     ],
     [
       "ddp",
-      "1.0.10"
+      "1.0.11"
     ],
     [
       "deps",
@@ -82,7 +82,7 @@
     ],
     [
       "ground:util",
-      "0.0.1"
+      "0.1.0"
     ],
     [
       "html-tools",
@@ -94,7 +94,7 @@
     ],
     [
       "http",
-      "1.0.7"
+      "1.0.8"
     ],
     [
       "id-map",
@@ -109,28 +109,32 @@
       "1.0.1"
     ],
     [
+      "launch-screen",
+      "1.0.0"
+    ],
+    [
       "livedata",
       "1.0.11"
     ],
     [
       "logging",
-      "1.0.4"
+      "1.0.5"
     ],
     [
       "meteor",
-      "1.1.2"
+      "1.1.3"
     ],
     [
       "meteor-platform",
-      "1.1.2"
+      "1.2.0"
     ],
     [
       "minifiers",
-      "1.1.1"
+      "1.1.2"
     ],
     [
       "minimongo",
-      "1.0.4"
+      "1.0.5"
     ],
     [
       "mobile-status-bar",
@@ -138,7 +142,7 @@
     ],
     [
       "mongo",
-      "1.0.7"
+      "1.0.8"
     ],
     [
       "observe-sequence",
@@ -151,6 +155,10 @@
     [
       "raix:eventemitter",
       "0.0.2"
+    ],
+    [
+      "raix:stubfence",
+      "1.0.0-rc2"
     ],
     [
       "random",
@@ -178,7 +186,7 @@
     ],
     [
       "session",
-      "1.0.3"
+      "1.0.4"
     ],
     [
       "spacebars",
@@ -190,7 +198,7 @@
     ],
     [
       "templating",
-      "1.0.8"
+      "1.0.9"
     ],
     [
       "tracker",
@@ -206,11 +214,11 @@
     ],
     [
       "url",
-      "1.0.1"
+      "1.0.2"
     ],
     [
       "webapp",
-      "1.1.3"
+      "1.1.4"
     ],
     [
       "webapp-hashing",
@@ -218,6 +226,6 @@
     ]
   ],
   "pluginDependencies": [],
-  "toolVersion": "meteor-tool@1.0.34",
+  "toolVersion": "meteor-tool@1.0.35",
   "format": "1.0"
 }
