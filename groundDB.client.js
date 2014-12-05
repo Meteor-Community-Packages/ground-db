@@ -147,6 +147,17 @@ _groundDbConstructor = function(collection, options) {
 
   /////// Finally got a name... and rigged
 
+  // Rig resume for this collection
+  if (!self.offlineDatabase && options.resume !== false) {
+
+    Ground.methodResume([
+      '/' + self.name + '/insert',
+      '/' + self.name + '/remove',
+      '/' + self.name + '/update'
+    ], self.connection);
+
+  }
+
   // Get the best storage available
   self.storage = Store.create({
     // We allow the user to set a prefix for the storage. Its mainly ment for
@@ -453,20 +464,34 @@ var _saveDatabase = function() {
 Ground.ready = _groundUtil.allSubscriptionsReady;
 
 
-// Methods to skip from caching
-var _skipThisMethod = { login: true, getServerTime: true };
+var _allowMethodResumeMap = {};
+var _methodResumeConnections = [];
+
+var addConnectionToResume = function(connection) {
+  if (_methodResumeConnections.indexOf(connection) < 0)
+    _methodResumeConnections.push(connection);
+};
+
+Ground.methodResume = function(names, connection) {
+  // Allow string or array of strings
+  if (names === ''+names) names = [names];
+
+  // Default to the default connection...
+  connection = connection || _groundUtil.connection;
+
+  // This index comes in handy when we use getMethodList
+  addConnectionToResume(connection);
+
+  // Add methods to resume
+  _groundUtil.each(names, function(name) {
+    _allowMethodResumeMap[name] = connection;
+  });
+  console.log(_allowMethodResumeMap);
+};
 
 // Add settings for methods to skip or not when caching methods
 Ground.skipMethods = function(methods) {
-  if (typeof methods !== 'object') {
-    throw new Error('skipMethods expects parametre as object of method names to skip when caching methods');
-  }
-  for (var key in methods) {
-    if (methods.hasOwnProperty(key)) {
-      // Extend the skipMethods object keys with boolean values
-      _skipThisMethod[key] = !!methods[key];
-    }
-  }
+  throw new Error('Ground.skipMethods is deprecated, use Ground.methodResume instead');
 };
 
 Ground.OneTimeout = _groundUtil.OneTimeout;
