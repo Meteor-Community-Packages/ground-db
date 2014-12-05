@@ -500,6 +500,13 @@ Ground.OneTimeout = _groundUtil.OneTimeout;
 
 // Is methods resumed?
 var _methodsResumed = false;
+var _methodsResumedDeps = new Tracker.Dependency();
+
+
+Ground.isResumed = function() {
+  _methodsResumedDeps.depend();
+  return _methodsResumed;
+};
 
 // Get a nice array of current methods
 var _getMethodsList = function() {
