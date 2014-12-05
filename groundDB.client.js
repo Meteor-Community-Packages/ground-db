@@ -45,11 +45,11 @@ var _groundDatabases = {};
 var _addChangedEmitter = function() {
   var self = this;
   // Reactive deps for when data changes
-  var _dataChanged = new Deps.Dependency();
+  var _dataChanged = new Tracker.Dependency();
 
   var _changeData = function() { _dataChanged.changed(); };
 
-  Deps.autorun(function() {
+  Tracker.autorun(function() {
     // Depend on data change
     _dataChanged.depend();
     // Emit changed
@@ -71,7 +71,7 @@ var _cleanUpLocalData = function() {
   // Flag marking if the local data is cleaned up to match the subscription
   self.isCleanedUp = false;
 
-  Deps.autorun(function(computation) {
+  Tracker.autorun(function(computation) {
     if (Ground.ready() && !self.isCleanedUp) {
       // If all subscriptions have updated the system then remove all local only
       // data?
