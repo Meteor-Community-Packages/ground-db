@@ -5,7 +5,7 @@ GroundDB is a fast and thin layer providing Meteor offline database and methods 
 
 ```js
   // Return a grounded Meteor.Collection
-  var list = new GroundDB('list');
+  var list = new Ground.Collection('list');
 ```
 
 ##Meteor Collection Interface
