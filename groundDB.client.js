@@ -853,40 +853,31 @@ var _syncMethods = function() {
 
 if (!inMainTestMode) {
 
-  // Modify connection, well just minor
-  _groundUtil.extend(_groundUtil.connection, {
-    // Define a new super for the methods
-    _gdbSuper: {
-      apply: _groundUtil.connection.apply,
-      _outstandingMethodFinished:
-      _groundUtil.connection._outstandingMethodFinished
-    },
-    // Modify apply
-    apply: function(/* arguments */) {
-      var self = this;
-      // Convert arguments to array
-      var args = _.toArray(arguments);
-      // Intercept grounded databases
-      if (!_skipThisMethod[args[0]])
-        test.debug('APPLY', JSON.stringify(_groundUtil.toArray(args)));
-    //  var args = _interceptGroundedDatabases(args);
+  // Add hooks method hooks
+  // We need to know when methods are added and when they have returned
+
+  var _super_apply = _groundUtil.Connection.prototype.apply;
+  var _super__outstandingMethodFinished = _groundUtil.Connection.prototype._outstandingMethodFinished;
+
+  _groundUtil.Connection.prototype.apply = function(name, args, options, callback) {
+    // Intercept grounded databases
+    if (_allowMethodResumeMap[name])
+      test.debug('APPLY', JSON.stringify(_groundUtil.toArray(arguments)));
+    // Call super
+    var result = _super_apply.apply(this, _groundUtil.toArray(arguments));
+    // Save methods
+    if (_allowMethodResumeMap[name]) _saveMethods();
+    // return the result
+    return result;
+  };
+
+  _groundUtil.Connection.prototype._outstandingMethodFinished = function() {
       // Call super
-      var result = self._gdbSuper.apply.apply(self, args);
-      // Save methods
-      _saveMethods();
-      // return the result
-      return result;
-    },
-    // Modify _outstandingMethodFinished
-    _outstandingMethodFinished: function() {
-      var self = this;
-      // Call super
-      self._gdbSuper._outstandingMethodFinished.apply(self);
+      _super__outstandingMethodFinished.apply(this);
       // We save current status of methods
       _saveMethods();
       // _outstandingMethodFinished dont return anything
     }
-  });
 
 }
 
