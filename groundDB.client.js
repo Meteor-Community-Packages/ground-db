@@ -487,7 +487,7 @@ Ground.methodResume = function(names, connection) {
   _groundUtil.each(names, function(name) {
     _allowMethodResumeMap[name] = connection;
   });
-  console.log(_allowMethodResumeMap);
+  // console.log(_allowMethodResumeMap);
 };
 
 // Add settings for methods to skip or not when caching methods
