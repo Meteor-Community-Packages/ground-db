@@ -107,8 +107,6 @@ var _setupTabSyncronizer = function() {
 var _setupDataStorageOnChange = function() {
   var self = this;
 
-  // One timeout pointer for database saves
-  self._saveDatabaseDelay = new _groundUtil.OneTimeout();
   // Add listener, is triggered on data change
   self.collection.addListener('changed', function(e) {
 
@@ -431,6 +429,9 @@ var _loadDatabase = function() {
   });
 };
 
+// One timeout pointer for database saves
+var _saveDatabaseTimeout = new OneTimeout(200);
+
 // Bulk Save database from memory to local, meant to be as slim, fast and
 // realiable as possible
 var _saveDatabase = function() {
@@ -438,7 +439,7 @@ var _saveDatabase = function() {
   // If data loaded from localstorage then its ok to save - otherwise we
   // would override with less data
   if (self._databaseLoaded && _isReloading === false) {
-    self._saveDatabaseDelay.oneTimeout(function() {
+    _saveDatabaseTimeout(function() {
       // We delay the operation a bit in case of multiple saves - this creates
       // a minor lag in terms of localstorage updating but it limits the num
       // of saves to the database
@@ -452,7 +453,7 @@ var _saveDatabase = function() {
         // XXX:
       });
 
-    }, 200);
+    });
   }
 };
 
@@ -494,7 +495,7 @@ Ground.skipMethods = function(methods) {
   throw new Error('Ground.skipMethods is deprecated, use Ground.methodResume instead');
 };
 
-Ground.OneTimeout = _groundUtil.OneTimeout;
+Ground.OneTimeout = OneTimeout;
 
 ///////////////////////////// RESUME METHODS ///////////////////////////////////
 
@@ -782,7 +783,7 @@ Meteor.startup(function() {
 
 /////////////////////////// SYNC TABS METHODS DATABSE //////////////////////////
 
-var syncDatabaseDelay = new _groundUtil.OneTimeout();
+var syncDatabaseTimeout = new OneTimeout(150);
 
 // Offline client only databases will sync a bit different than normal
 // This function is a bit hard - but it works - optimal solution could be to
@@ -790,7 +791,7 @@ var syncDatabaseDelay = new _groundUtil.OneTimeout();
 var _syncDatabase = function() {
   var self = this;
   // We set a small delay in case of more updates within the wait
-  syncDatabaseDelay.oneTimeout(function() {
+  syncDatabaseTimeout(function() {
 //    if (self && (self.offlineDatabase === true || !Meteor.status().connected)) {
     if (self) {
       // Add event hook
@@ -825,10 +826,10 @@ var _syncDatabase = function() {
       });
 
     }
-  }, 150);
+  });
 };
 
-var syncMethodsDelay = new _groundUtil.OneTimeout();
+var syncMethodsTimeout = new OneTimeout(500);
 
 // Syncronize tabs via method calls
 var _syncMethods = function() {
@@ -837,7 +838,7 @@ var _syncMethods = function() {
   // We are not master and the user is working on another tab, we are not in
   // a hurry to spam the browser with work, plus there are typically acouple
   // of db access required in most operations, we wait a sec?
-  syncMethodsDelay.oneTimeout(function() {
+  syncMethodsTimeout(function() {
     // Add event hook
     Ground.emit('sync', 'methods');
     // Load the offline data into our memory
@@ -850,7 +851,7 @@ var _syncMethods = function() {
     _loadMethods();
     // Resume normal writes
     _isReloading = false;
-  }, 500);
+  });
 };
 
 /////////////////////// ADD TRIGGERS IN LIVEDATACONNECTION /////////////////////
