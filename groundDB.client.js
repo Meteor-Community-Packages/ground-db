@@ -14,24 +14,18 @@ Regz. RaiX
 */
 
 ///////////////////////////////// TEST BED /////////////////////////////////////
-var GroundTestPackage = Package['ground:test'] || Package['ground-test'];
-var GroundTest = GroundTestPackage && GroundTestPackage.GroundTest;
 
-var inTestMode = !!GroundTest;
-var inMainTestMode = (inTestMode && GroundTest.isMain);
-
-var test = {
-  log: function(/* arguments */) {
-    if (inTestMode) {
-      GroundTest.log.apply(GroundTest, _groundUtil.toArray(arguments));
-    }
-  },
-  debug: function(/* arguments */) {
-    if (inTestMode) {
-      GroundTest.debug.apply(GroundTest, _groundUtil.toArray(arguments));
-    }
-  }
-};
+try {
+  var test = Package['ground:test'].GroundTest;
+  console.warn('## IN TEST MODE');
+} catch(err) {
+  // Production noop
+  var test = {
+    log: function() {},
+    debug: function() {},
+    isMain: false
+  };
+}
 
 //////////////////////////////// GROUND DATABASE ///////////////////////////////
 
@@ -635,7 +629,7 @@ var _sendMethod = function(method, connection) {
   // Send a log message first to the test
   test.log('SEND', JSON.stringify(method));
 
-  if (inMainTestMode) console.warn('Main test should not send methods...');
+  if (test.isMain) console.warn('Main test should not send methods...');
 
   connection.apply(
     method.method, method.args, method.options, function(err, result) {
@@ -856,7 +850,7 @@ var _syncMethods = function() {
 
 /////////////////////// ADD TRIGGERS IN LIVEDATACONNECTION /////////////////////
 
-if (!inMainTestMode) {
+if (!test.isMain) {
 
   // Add hooks method hooks
   // We need to know when methods are added and when they have returned
@@ -889,7 +883,7 @@ if (!inMainTestMode) {
 /////////////////////// LOAD CHANGES FROM OTHER TABS ///////////////////////////
 
 // The main test mode should not interfere with tab sync
-if (!inMainTestMode) {
+if (!test.isMain) {
 
   // Sync Methods if changed
   _methodsStorage.addListener('storage', function(e) {
