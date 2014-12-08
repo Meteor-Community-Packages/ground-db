@@ -893,3 +893,12 @@ if (!test.isMain) {
   });
 
 }
+
+////////////////////////// ADD DEPRECATION NOTICE //////////////////////////////
+if (typeof GroundDB === 'undefined') {
+  GroundDB = function(name, options) {
+    // Deprecation notice
+    console.warn('The GroundDB scope is deprecating!! Use Ground.Collection instead');
+    return new Ground.Collection(name, options);
+  };
+}
