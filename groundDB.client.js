@@ -465,6 +465,9 @@ var _saveDatabase = function() {
 // possible yet
 Ground.ready = _groundUtil.allSubscriptionsReady;
 
+Ground.lookup = function(collectionName) {
+  return _groundDatabases[collectionName];
+};
 
 var _allowMethodResumeMap = {};
 var _methodResumeConnections = [];
