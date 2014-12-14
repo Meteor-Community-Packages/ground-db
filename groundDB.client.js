@@ -397,7 +397,7 @@ var _loadDatabase = function() {
 
   // Emit event
   self.collection.emit('resume');
-  Ground.emit('resume', 'database', self);
+  Ground.emit('resume', { type: 'database', collection: self.name });
 
   // Load object from localstorage
   self.storage.getItem('data', function(err, data) {
@@ -445,13 +445,21 @@ var _saveDatabase = function() {
       // a minor lag in terms of localstorage updating but it limits the num
       // of saves to the database
       // Make sure our database is loaded
-      self.collection.emit('cachedatabase');
-      Ground.emit('cache', 'database', self);
-
+      self.collection.emit('cache', { type: 'database' });
+      Ground.emit('cache', { type: 'database', collection: self.name });
       var minifiedDb = MiniMax.minify(_groundUtil.getDatabaseMap(self));
       // Save the collection into localstorage
       self.storage.setItem('data', minifiedDb, function(err, result) {
-        // XXX:
+        // Emit feedback
+        if (err) {
+          // Emit error
+          self.collection.emit('error', { error: err });
+          Ground.emit('error', { collection: self.name, error: err });
+        } else {
+          // Emit cached event
+          self.collection.emit('cached', { type: 'database' });
+          Ground.emit('cached', { type: 'database', collection: self.name });
+        }
       });
 
     });
@@ -573,7 +581,7 @@ var _flushInMemoryMethods = function() {
     }
     if (didFlushSome) {
       // Call the event callback
-      Ground.emit('flush', 'methods');
+      Ground.emit('flush', { type: 'methods' });
     }
 
   }
@@ -653,7 +661,7 @@ var _sendMethod = function(method, connection) {
       }
 
       // Emit the data we got back here
-      Ground.emit('method', method, err, result);
+      Ground.emit('method', { method: method, error: err, result: result });
     }
   );
 };
@@ -761,7 +769,7 @@ var _saveMethods = function() {
   if (_methodsResumed) {
 
     // Ok memory is initialized
-    Ground.emit('cache', 'methods');
+    Ground.emit('cache', { type: 'methods' });
 
     // Save outstanding methods to localstorage
     var methods = _getMethodsList();
@@ -800,7 +808,7 @@ var _syncDatabase = function() {
     if (self) {
       // Add event hook
       self.collection.emit('sync');
-      Ground.emit('sync', 'database', self);
+      Ground.emit('sync', { type: 'database', collection: self.name });
       // Hard reset database?
       self.storage.getItem('data', function(err, data) {
         if (err) {
@@ -844,7 +852,7 @@ var _syncMethods = function() {
   // of db access required in most operations, we wait a sec?
   syncMethodsTimeout(function() {
     // Add event hook
-    Ground.emit('sync', 'methods');
+    Ground.emit('sync', { type: 'methods' });
     // Load the offline data into our memory
     _groundUtil.each(_groundDatabases, function(collection, name) {
       test.log('SYNC DB', name);
