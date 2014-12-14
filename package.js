@@ -1,6 +1,6 @@
 Package.describe({
   name: "ground:db",
-  version: "0.1.3",
+  version: "0.1.4",
   summary: "Ground Meteor.Collections offline",
   git: "https://github.com/GroundMeteor/db.git"
 });
