@@ -67,7 +67,7 @@ Ground.Collection can be applied on client-side only eg.: `new Meteor.Collection
   // Ground an existing Meteor.Collection  
   var list = new Meteor.Collection(null);
   // just ground the database and map on suffix `list`
-  GroundDB(list, 'list');
+  Ground.Collection(list, 'list');
 ```
 *You can only have one grounded collection with name null*
 
@@ -79,14 +79,14 @@ If localstorage is not supported the groundDB simply work as a normal `Meteor.Co
 ##Concept
 Localstorage is simple and widely supported - but slow - *Thats why we only use it for caching databases and methods + trying to limit the read and writes from it.*
 
-GroundDB saves outstanding methods and minimongo db into localstorage - The number of saves to localstorage is minimized.
+GroundDB saves outstanding methods and minimongo db into localstorage - The number of saves to localstorage is minimized. *Use `Ground.resumeMethods`*
 
 When the app loads GroundDB resumes methods and database changes - made when offline and browser closed.
 
 ##Ground user details
 It's possible to mount an allready existing collection on a `groundDB` eg.:
 ```js
-  GroundDB(Meteor.users);
+  Ground.Collectino(Meteor.users);
 ```
 *The example will keep `Meteor.user()` returning correct user details - even if offline*
 
@@ -94,11 +94,11 @@ It's possible to mount an allready existing collection on a `groundDB` eg.:
 It's possible to ground an allready existing `smartCollectin` on a `groundDB` eg.:
 ```js
   var mySmartCollection = new SmartCollection('foo');
-  GroundDB(mySmartCollection);
+  Ground.Collection(mySmartCollection);
 
 or
 
-  var mySmartCollection = GroundDB(new SmartCollection('foo'));
+  var mySmartCollection = Ground.Collection(new SmartCollection('foo'));
 
   // use the smart collection
   mySmartCollection.insert(/* stuff */);
@@ -117,32 +117,42 @@ When offline the data remains in the local database - since the publish is a ser
 ##Events *- client-side*
 The event api is as follows:
 ```js
-GroundDB.onQuotaExceeded = function() {};
-GroundDB.onResumeDatabase = function(name) {};
-GroundDB.onResumeMethods = function() {};
-GroundDB.onMethodCall = function(methodCall) {};
-GroundDB.onCacheDatabase = function(name) {};
-GroundDB.onCacheMethods = function() {};
-GroundDB.onTabSync = function(key) {};
-GroundDB.skipMethods = function(methodsToSkipObject)
+Ground.lookup = function(collectionName) {};
+Ground.methodResume = function(names, connection) {};
+
+Ground.addListener // Listen to general events
+foo.addListener // Add listener specific to the foo collection
 
 // Reactive status of all subscriptions, ready or not:
-GroundDB.ready();
+Ground.ready();
+
+// DEPRECATED API:
+~~Ground.onQuotaExceeded = function() {};~~
+~~Ground.onResumeDatabase = function(name) {};~~
+~~Ground.onResumeMethods = function() {};~~
+~~Ground.onMethodCall = function(methodCall) {};~~
+~~Ground.onCacheDatabase = function(name) {};~~
+~~Ground.onCacheMethods = function() {};~~
+~~Ground.onTabSync = function(key) {};~~
+~~Ground.skipMethods = function(methodsToSkipObject)~~
 ```
 
-##Don't cache my method for offline resume
-Sometimes one may want a method call not to be resumeable, so we can tell `GroundDB` to skip the method when caching method calls:
+## Cache methods
+Use the `Ground.methodResume` to cache method calls on a collection. It takes the method name or array of names. The connection is optional if not set the default connection is used:
 ```js
-  GroundDB.skipMethods({
-    myOnlineOnlyMethod: true
-  });
+  // This is how grounddb uses this internally
+  Ground.methodResume([
+    '/' + self.name + '/insert',
+    '/' + self.name + '/remove',
+    '/' + self.name + '/update'
+  ], self.connection);
 ```
-*Pr. default the login method call is skipped resume because the Accounts does resume of itself*
+*The `Ground.skipMethods` is deprecated*
 
 ##Conflict handling *IN the works - not ready for use yet*
 The conflict handling api is as follows:
 ```js
-GroundDB.now(); // Returns server timestamp works on both client and server
+Ground.now(); // Returns server timestamp works on both client and server
 ```
 
 ##Future
