@@ -145,6 +145,9 @@ _groundDbConstructor = function(collection, options) {
 
   /////// Finally got a name... and rigged
 
+  // One timeout pointer for database saves
+  self._saveDatabaseTimeout = new OneTimeout(200);
+
   // Rig resume for this collection
   if (!self.offlineDatabase && options.resume !== false) {
 
@@ -430,9 +433,6 @@ var _loadDatabase = function() {
   });
 };
 
-// One timeout pointer for database saves
-var _saveDatabaseTimeout = new OneTimeout(200);
-
 // Bulk Save database from memory to local, meant to be as slim, fast and
 // realiable as possible
 var _saveDatabase = function() {
@@ -440,7 +440,7 @@ var _saveDatabase = function() {
   // If data loaded from localstorage then its ok to save - otherwise we
   // would override with less data
   if (self._databaseLoaded && _isReloading === false) {
-    _saveDatabaseTimeout(function() {
+    self._saveDatabaseTimeout(function() {
       // We delay the operation a bit in case of multiple saves - this creates
       // a minor lag in terms of localstorage updating but it limits the num
       // of saves to the database
