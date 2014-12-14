@@ -232,7 +232,8 @@ Ground.Collection = function(name, options) {
   if (!(self instanceof _groundUtil.Collection))
     throw new Error('Ground.Collection expected a Mongo.Collection');
 
-  // Add grounddb to the collection
+  // Add grounddb to the collection, circular reference since self is
+  // grounddb.collection
   self.grounddb = new _groundDbConstructor(self, options);
 
   // Return grounded collection - We dont return this eg if it was an instance
