@@ -125,7 +125,7 @@ foo.addListener // Add listener specific to the foo collection
 
 // Reactive status of all subscriptions, ready or not:
 Ground.ready();
-``
+```
 
 DEPRECATED API:
 ~~Ground.onQuotaExceeded = function() {};~~
