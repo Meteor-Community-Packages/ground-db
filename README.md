@@ -125,8 +125,9 @@ foo.addListener // Add listener specific to the foo collection
 
 // Reactive status of all subscriptions, ready or not:
 Ground.ready();
+``
 
-// DEPRECATED API:
+DEPRECATED API:
 ~~Ground.onQuotaExceeded = function() {};~~
 ~~Ground.onResumeDatabase = function(name) {};~~
 ~~Ground.onResumeMethods = function() {};~~
@@ -135,7 +136,6 @@ Ground.ready();
 ~~Ground.onCacheMethods = function() {};~~
 ~~Ground.onTabSync = function(key) {};~~
 ~~Ground.skipMethods = function(methodsToSkipObject)~~
-```
 
 ## Cache methods
 Use the `Ground.methodResume` to cache method calls on a collection. It takes the method name or array of names. The connection is optional if not set the default connection is used:
