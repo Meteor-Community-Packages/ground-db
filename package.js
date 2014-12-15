@@ -1,6 +1,6 @@
 Package.describe({
   name: "ground:db",
-  version: "0.1.7",
+  version: "0.2.0",
   summary: "Ground Meteor.Collections offline",
   git: "https://github.com/GroundMeteor/db.git"
 });
@@ -15,9 +15,9 @@ Package.on_use(function (api) {
     'underscore',
     'minimongo',
     'ejson',
-    'ground:util@0.1.1',
+    'ground:util@0.1.3',
     'ground:servertime@0.0.0',
-    'ground:minimax@0.0.2',
+    //'ground:minimax@1.0.1', // Its implied by ground:util
     'ground:localstorage@0.1.5',
     'raix:eventemitter@0.0.2',
     'raix:stubfence@1.0.0-rc2',
