@@ -35,6 +35,19 @@ try {
 
 //////////////////////////////// GROUND DATABASE ///////////////////////////////
 
+// XXX: This usage of minimax could be extended to letting the user add more
+// words to the dictionary - but its not without danger and should prop. trigger
+// some warning if no migration scheme is setup...
+var MiniMaxDB = new MiniMax({
+  // We add the most general words in databases
+ dictionary: ['_id', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy']
+});
+
+var MiniMaxMethods = new MiniMax({
+  // We add the most general words in databases
+  dictionary: ['method', 'args', 'options', 'wait', '_id']
+});
+
 // Status of app reload
 var _isReloading = false;
 
@@ -406,7 +419,7 @@ var _loadDatabase = function() {
     } else {
 
       // Maxify the data
-      var docs = data && MiniMax.maxify(data) || {};
+      var docs = data && MiniMaxDB.maxify(data) || {};
 
       // Initialize client documents
       _groundUtil.each(_checkDocs.call(self, docs || {} ), function(doc) {
@@ -447,7 +460,7 @@ var _saveDatabase = function() {
       // Make sure our database is loaded
       self.collection.emit('cache', { type: 'database' });
       Ground.emit('cache', { type: 'database', collection: self.name });
-      var minifiedDb = MiniMax.minify(_groundUtil.getDatabaseMap(self));
+      var minifiedDb = MiniMaxDB.minify(_groundUtil.getDatabaseMap(self));
       // Save the collection into localstorage
       self.storage.setItem('data', minifiedDb, function(err, result) {
         // Emit feedback
@@ -728,7 +741,7 @@ var loadMissingMethods = function(callback) {
       // Maxify the data from storage
       // We are only going to submit the diff
       // Set missing methods
-      waitingMethods = _getMethodUpdates(MiniMax.maxify(data));
+      waitingMethods = _getMethodUpdates(MiniMaxMethods.maxify(data));
     }
 
     callback();
@@ -774,7 +787,7 @@ var _saveMethods = function() {
     // Save outstanding methods to localstorage
     var methods = _getMethodsList();
 //test.log('SAVE METHODS', JSON.stringify(methods));
-    _methodsStorage.setItem('methods', MiniMax.minify(methods), function(err, result) {
+    _methodsStorage.setItem('methods', MiniMaxMethods.minify(methods), function(err, result) {
       // XXX:
     });
 
@@ -816,7 +829,7 @@ var _syncDatabase = function() {
           throw err;
         } else {
           // Get the data back in size
-          var newDocs = MiniMax.maxify(data);
+          var newDocs = MiniMaxDB.maxify(data);
 
           self.collection.find().forEach(function(doc) {
             // Remove document
