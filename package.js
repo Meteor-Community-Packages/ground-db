@@ -5,7 +5,7 @@ Package.describe({
   git: "https://github.com/GroundMeteor/db.git"
 });
 
-Package.on_use(function (api) {
+Package.onUse(function (api) {
   api.versionsFrom('1.0');
 
   api.use('meteor-platform', ['client', 'server']);
@@ -19,7 +19,7 @@ Package.on_use(function (api) {
     'ground:servertime@0.0.0',
     //'ground:minimax@1.0.1', // Its implied by ground:util
     'ground:localstorage@0.1.5',
-    'raix:eventemitter@0.0.2',
+    'raix:eventemitter@0.1.0',
     'raix:stubfence@1.0.0-rc2',
     'raix:onetimeout@1.0.1'
   ], ['client', 'server']);
@@ -37,21 +37,21 @@ Package.on_use(function (api) {
 
   //api.use([], 'server');
   //api.use(['localstorage', 'ejson'], 'client');
-  api.add_files([
+  api.addFiles([
     'groundDB.client.js',
     'wrap.collection.js',
     'wrap.eventemitter.js',
     'wrap.proto.eventemitter.js',
     ], 'client');
-  api.add_files('groundDB.server.js', 'server');
+  api.addFiles('groundDB.server.js', 'server');
 });
 
-Package.on_test(function (api) {
+Package.onTest(function (api) {
   api.use('ground:db', ['client']);
   api.use('test-helpers', 'client');
   api.use(['tinytest', 'underscore', 'ejson', 'ordered-dict',
            'random', 'tracker']);
 
-  api.add_files('groundDB.client.tests.js', 'client');
-  api.add_files('groundDB.server.tests.js', 'server');
+  api.addFiles('groundDB.client.tests.js', 'client');
+  api.addFiles('groundDB.server.tests.js', 'server');
 });
