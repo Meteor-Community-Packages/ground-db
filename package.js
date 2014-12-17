@@ -15,13 +15,13 @@ Package.onUse(function (api) {
     'underscore',
     'minimongo',
     'ejson',
-    'ground:util@0.1.5',
-    'ground:servertime@0.0.2',
+    'ground:util@0.1.6',
+    'ground:servertime@0.0.3',
     //'ground:minimax@1.0.1', // Its implied by ground:util
     'ground:localstorage@0.1.6',
-    'raix:eventemitter@0.1.0',
-    'raix:stubfence@1.0.0',
-    'raix:onetimeout@1.0.2'
+    'raix:eventemitter@0.1.1',
+    'raix:stubfence@1.0.1',
+    'raix:onetimeout@1.0.3'
   ], ['client', 'server']);
 
   // Make sure any storage adapters are loaded first
