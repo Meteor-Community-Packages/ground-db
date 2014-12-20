@@ -1,3 +1,4 @@
+/.versions
 /versions.json
 .build*
 .DS_Store
