@@ -1,6 +1,14 @@
 # Changelog
 
 ## vCurrent
+## [connection-driver] (https://github.com/GroundMeteor/db/tree/connection-driver)
+#### 20/12/14 by Morten Henriksen
+- add changelog
+
+- Bump to version 0.2.5
+
+- Updated the server-side code fix #67
+
 ## [v0.2.4] (https://github.com/GroundMeteor/db/tree/v0.2.4)
 #### 17/12/14 by Morten Henriksen
 ## [v0.2.3] (https://github.com/GroundMeteor/db/tree/v0.2.3)
@@ -35,7 +43,7 @@
 
 - *Fixed bug:* "ReferenceError: GroundDB is not defined" [#64](https://github.com/GroundMeteor/db/issues/64)
 
-## [(origin/Meteor-0-9-1, Meteor-0-9-1] (https://github.com/GroundMeteor/db/tree/(origin/Meteor-0-9-1, Meteor-0-9-1)
+## [Meteor-0-9-1] (https://github.com/GroundMeteor/db/tree/Meteor-0-9-1)
 #### 07/12/14 by Morten Henriksen
 - *Merged pull-request:* "Comment console.log in methodResume" [#62](https://github.com/GroundMeteor/db/issues/62) ([francocatena](https://github.com/francocatena))
 
@@ -93,7 +101,7 @@ Patches by GitHub user [@francocatena](https://github.com/francocatena).
 
 ## [v0.1.4] (https://github.com/GroundMeteor/db/tree/v0.1.4)
 #### 29/08/14 by Morten Henriksen
-## [(origin/pre-mps, pre-mps] (https://github.com/GroundMeteor/db/tree/(origin/pre-mps, pre-mps)
+## [pre-mps] (https://github.com/GroundMeteor/db/tree/pre-mps)
 #### 29/08/14 by Morten Henriksen
 ## [v0.1.3] (https://github.com/GroundMeteor/db/tree/v0.1.3)
 #### 29/08/14 by Morten Henriksen
@@ -175,7 +183,7 @@ Patches by GitHub user [@merunga](https://github.com/merunga).
 
 ## [v0.0.15] (https://github.com/GroundMeteor/db/tree/v0.0.15)
 #### 28/07/13 by Morten Henriksen
-## [(origin/devel] (https://github.com/GroundMeteor/db/tree/(origin/devel)
+## [devel] (https://github.com/GroundMeteor/db/tree/devel)
 #### 28/07/13 by Morten Henriksen
 - Added `EJSON.minify` and `EJSON.maxify`
 
