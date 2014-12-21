@@ -409,7 +409,7 @@ var _loadDatabase = function() {
   // Then load the docs into minimongo
 
   // Emit event
-  self.collection.emit('resume');
+  self.collection.emit('resume', { type: 'database' });
   Ground.emit('resume', { type: 'database', collection: self.name });
 
   // Load object from localstorage
@@ -417,6 +417,9 @@ var _loadDatabase = function() {
     if (err) {
       // XXX:
     } else {
+
+      self.collection.emit('resumed', { type: 'database', data: data });
+      Ground.emit('resumed', { type: 'database', collection: self.name });
 
       // Maxify the data
       var docs = data && MiniMaxDB.maxify(data) || {};
@@ -470,7 +473,7 @@ var _saveDatabase = function() {
           Ground.emit('error', { collection: self.name, error: err });
         } else {
           // Emit cached event
-          self.collection.emit('cached', { type: 'database' });
+          self.collection.emit('cached', { type: 'database', data: minifiedDb });
           Ground.emit('cached', { type: 'database', collection: self.name });
         }
       });
