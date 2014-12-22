@@ -698,26 +698,35 @@ var resumeWaitingMethods = function() {
 
   // Resume each method
   _groundUtil.each(waitingMethods, function(method) {
-    // name helper for the method
-    var name = method.method;
-    test.log('RESUME', 'Load method "' + name + '"');
-    // Get the connection from the allow method resume
-    var methodConnection = _allowMethodResumeMap[name];
-    // Run it in fenced mode since the changes have already been applied
-    // locally
-    if (methodConnection) {
+    if (method) {
 
-      _groundUtil.connection.stubFence(name, function() {
-        // Add method to connection
-        _sendMethod(method, methodConnection);
-      });
+      // name helper for the method
+      var name = method.method;
 
-    } else {
-      // XXX: make sure we keep order
-      // TODO: Check if we should use push or unshift
-      missing.push(method);
-      test.log('RESUME', 'Missing method "' + name + '" - retry later');
-      console.warn('Ground method resume: Cannot resume "' + name + '" connection not rigged yet, retry later');
+      if (name) {
+
+        test.log('RESUME', 'Load method "' + name + '"');
+        // Get the connection from the allow method resume
+        var methodConnection = _allowMethodResumeMap[name];
+        // Run it in fenced mode since the changes have already been applied
+        // locally
+        if (methodConnection) {
+
+          _groundUtil.connection.stubFence(name, function() {
+            // Add method to connection
+            _sendMethod(method, methodConnection);
+          });
+
+        } else {
+          // XXX: make sure we keep order
+          // TODO: Check if we should use push or unshift
+          missing.push(method);
+          test.log('RESUME', 'Missing method "' + name + '" - retry later');
+          console.warn('Ground method resume: Cannot resume "' + name + '" connection not rigged yet, retry later');
+        }
+
+      }
+
     }
   });
 
