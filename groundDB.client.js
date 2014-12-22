@@ -656,7 +656,7 @@ var _getMethodUpdates = function(newMethods) {
 // Create the storage for methods
 var _methodsStorage = Store.create({
   name: '_methods_',
-  version: 1.0
+  version: 1.1
 });
 
 var _sendMethod = function(method, connection) {
