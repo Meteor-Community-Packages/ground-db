@@ -180,7 +180,7 @@ _groundDbConstructor = function(collection, options) {
     name: _prefix + self.name,
     // Default version is 1.0 - if different from the one in storage record it
     // would trigger a migration
-    version: options.version,
+    version: options.version || 1.1,
     // migration can be set to overwrite the default behaviour on the storage.
     // the options.migration should be a function(oldRecord, newRecord)
     // one can compare the oldRecord.version and the new version to ensure
