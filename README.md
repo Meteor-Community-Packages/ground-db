@@ -86,7 +86,7 @@ When the app loads GroundDB resumes methods and database changes - made when off
 ##Ground user details
 It's possible to mount an allready existing collection on a `groundDB` eg.:
 ```js
-  Ground.Collectino(Meteor.users);
+  Ground.Collection(Meteor.users);
 ```
 *The example will keep `Meteor.user()` returning correct user details - even if offline*
 
