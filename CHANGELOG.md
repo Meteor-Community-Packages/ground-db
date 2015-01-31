@@ -1,13 +1,22 @@
 # Changelog
 
 ## vCurrent
-## [connection-driver] (https://github.com/GroundMeteor/db/tree/connection-driver)
+## [v0.3.1] (https://github.com/GroundMeteor/db/tree/v0.3.1)
+#### 22/12/14 by Morten Henriksen
+
+- bump method storage
+
+## [v0.3.0] (https://github.com/GroundMeteor/db/tree/v0.3.0)
+#### 21/12/14 by Morten Henriksen
+- Add resumed database event
+
+## [v0.2.5] (https://github.com/GroundMeteor/db/tree/v0.2.5)
 #### 20/12/14 by Morten Henriksen
 - add changelog
 
 - Bump to version 0.2.5
 
-- Updated the server-side code fix #67
+- *Fixed bug:* "Error "First argument to new Mongo.Collection..."" [#67](https://github.com/GroundMeteor/db/issues/67)
 
 ## [v0.2.4] (https://github.com/GroundMeteor/db/tree/v0.2.4)
 #### 17/12/14 by Morten Henriksen
