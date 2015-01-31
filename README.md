@@ -8,12 +8,12 @@ GroundDB is a fast and thin layer providing Meteor offline database and methods 
   var list = new Ground.Collection('list');
 ```
 
-##Meteor Collection Interface
+## Meteor Collection Interface
 GroundDB is like a normal `Meteor.Collection` - but changes and outstanding methods are cached and resumed.
 
 [Live basic debug test](http://grounddb.meteor.com/)
 
-##Features:
+## Features:
 * Light footprint
 * Broad browser support Chrome, Safari, Firefox and Internet Explorer 9
 * Fallback to normal Meteor.Collection if no local storage
@@ -25,7 +25,7 @@ GroundDB is like a normal `Meteor.Collection` - but changes and outstanding meth
 * Uses `EJSON.minify` and `EJSON.maxify` to compress data in localstorage
 * *In the future there will be a customizable conflict handler on the server-side*
 
-##Creating a Ground.Collection object (variants)
+## Creating a Ground.Collection object (variants)
 ```js
 
   // Return a grounded Meteor.Collection
@@ -46,7 +46,7 @@ GroundDB is like a normal `Meteor.Collection` - but changes and outstanding meth
 ```
 *Example of different patterns. Grounding a `Meteor.Collection` will attach the `cache`, `resume` and `cross tabs update offline`*
 
-##Pure client-side offline databases (variants)
+## Pure client-side offline databases (variants)
 Ground.Collection can be applied on client-side only eg.: `new Meteor.Collection(null);`
 ```js
 
@@ -71,26 +71,26 @@ Ground.Collection can be applied on client-side only eg.: `new Meteor.Collection
 ```
 *You can only have one grounded collection with name null*
 
-##Support
+## Support
 Tested on Chrome, Safari, Firefox and IE9 *(though appcache is not supported in IE9 tabs are updated when offline)* - but all browsers that support localstorage *contains a FF safe test of localstorage*
 
 If localstorage is not supported the groundDB simply work as a normal `Meteor.Collection`
 
-##Concept
+## Concept
 Localstorage is simple and widely supported - but slow - *Thats why we only use it for caching databases and methods + trying to limit the read and writes from it.*
 
 GroundDB saves outstanding methods and minimongo db into localstorage - The number of saves to localstorage is minimized. *Use `Ground.resumeMethods`*
 
 When the app loads GroundDB resumes methods and database changes - made when offline and browser closed.
 
-##Ground user details
+## Ground user details
 It's possible to mount an allready existing collection on a `groundDB` eg.:
 ```js
   Ground.Collection(Meteor.users);
 ```
 *The example will keep `Meteor.user()` returning correct user details - even if offline*
 
-##Ground SmartCollections
+## Ground SmartCollections
 It's possible to ground an allready existing `smartCollectin` on a `groundDB` eg.:
 ```js
   var mySmartCollection = new SmartCollection('foo');
@@ -104,17 +104,17 @@ or
   mySmartCollection.insert(/* stuff */);
 ```
 
-##Resume of outstanding methods
+## Resume of outstanding methods
 Database changes and methods will be sent to the server just like normal. The methods are sent to server after relogin - this way `this.userId` isset when running on the server. In other words: `Just like normal`
 
-##Publish and subscription
-###Online
+## Publish and subscription
+### Online
 Subscription behavior when using `GroundDB` - When online it's just like normal `Meteor` so nothing new. If you unsubscribe a collection you can still insert etc. but the data will not be visible on the client.
-###Offline
+### Offline
 When offline the data remains in the local database - since the publish is a server thing. Use the query selector for filtering unwanted data.
 *When reconnected the database will update client subscription and changes will be resumed*
 
-##Events *- client-side*
+## Events *- client-side*
 The event api is as follows:
 ```js
 Ground.lookup = function(collectionName) {};
@@ -149,7 +149,7 @@ Use the `Ground.methodResume` to cache method calls on a collection. It takes th
 ```
 *The `Ground.skipMethods` is deprecated*
 
-##Conflict handling *IN the works - not ready for use yet*
+## Conflict handling *IN the works - not ready for use yet*
 The conflict handling api is as follows:
 ```js
 Ground.now(); // Returns server timestamp works on both client and server
@@ -167,11 +167,11 @@ Normally Ground Collections are cleaned up for local only data when subscription
   groundList.removeLocalOnly();
 ```
 
-##Future
+## Future
 * At the moment the conflict resolution is pretty basic last change recieved by server wins. This could be greatly improved by adding a proper conflict handler. *For more details look at comment in server.js*
 * Intelligent subscriptions - A way for the groundDB to keep the data most important for the user - and letting less important data go to match quota limit
 
-##Contributions
+## Contributions
 Feel free to send issues, pull requests all is wellcome
 
 Kind regards Morten
