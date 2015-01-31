@@ -207,9 +207,10 @@ _groundDbConstructor = function(collection, options) {
   // Map local-only - this makes sure that localstorage matches remote loaded db
   self._localOnly = {};
 
-  // Clean up the database and align to subscription
-  _cleanUpLocalData.call(self);
-
+  // Clean up the database and align to subscription - we dont do this for
+  // pure offline databases
+  if (options.cleanupLocalData && !self.offlineDatabase)
+    _cleanUpLocalData.call(self);
 
   // Add the emitter of "changed" events
   _addChangedEmitter.call(self);
@@ -235,7 +236,11 @@ Ground.Collection = function(name, options) {
 
 
   // Make sure we got some options
-  options = options || {};
+  options = _.extend({
+    // By default local data is cleaned up when all subscriptions are ready
+    // but thats not what we would do always
+    cleanupLocalData: true
+  }, options);
 
   // Either name is a Meteor collection or we create a new Meteor collection
   if (name instanceof _groundUtil.Collection) {
@@ -255,6 +260,16 @@ Ground.Collection = function(name, options) {
   // Return grounded collection - We dont return this eg if it was an instance
   // of Ground.Collection
   return self;
+};
+
+/**
+ * Clean up local only data
+ */
+Ground.Collection.prototype.removeLocalOnly = function() {
+  var self = this;
+
+  self.isCleanedUp = true;
+  _removeLocalOnly.call(self);
 };
 
 ////////////////////////////////////////////////////////////////////////////////

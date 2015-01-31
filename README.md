@@ -155,6 +155,18 @@ The conflict handling api is as follows:
 Ground.now(); // Returns server timestamp works on both client and server
 ```
 
+## Additional api
+Normally Ground Collections are cleaned up for local only data when subscriptions are ready. But sometimes we might want to local the data later eg. if the db is already populated.
+
+```js
+  var groundList = new Ground.Collection(list, 'list', {
+    cleanupLocalData: false
+  });
+
+  // Manually triggering a clean up of local only data
+  groundList.removeLocalOnly();
+```
+
 ##Future
 * At the moment the conflict resolution is pretty basic last change recieved by server wins. This could be greatly improved by adding a proper conflict handler. *For more details look at comment in server.js*
 * Intelligent subscriptions - A way for the groundDB to keep the data most important for the user - and letting less important data go to match quota limit
