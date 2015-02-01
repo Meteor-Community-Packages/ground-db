@@ -1,6 +1,18 @@
 # Changelog
 
 ## vCurrent
+## [v0.3.2] (https://github.com/GroundMeteor/db/tree/v0.3.2)
+#### 31/01/15 by Morten Henriksen
+- Bump to version 0.3.2
+
+- Add option disabling auto clean up of local only data
+
+- *Merged pull-request:* "Fix typo in README.md" [#74](https://github.com/GroundMeteor/db/issues/74) ([theneva](https://github.com/theneva))
+
+- Fix typo in README.md
+
+Patches by GitHub user [@theneva](https://github.com/theneva).
+
 ## [v0.3.1] (https://github.com/GroundMeteor/db/tree/v0.3.1)
 #### 22/12/14 by Morten Henriksen
 
