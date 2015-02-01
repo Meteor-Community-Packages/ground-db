@@ -159,7 +159,7 @@ Ground.now(); // Returns server timestamp works on both client and server
 Normally Ground Collections are cleaned up for local only data when subscriptions are ready. But sometimes we might want to local the data later eg. if the db is already populated.
 
 ```js
-  var groundList = new Ground.Collection(list, 'list', {
+  var groundList = new Ground.Collection('list', {
     cleanupLocalData: false
   });
 
