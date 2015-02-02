@@ -165,6 +165,9 @@ Normally Ground Collections are cleaned up for local only data when subscription
 
   // Manually triggering a clean up of local only data
   groundList.removeLocalOnly();
+
+  // Clear local data - This will empty all local data
+  groundList.clear();
 ```
 
 ## Future

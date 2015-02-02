@@ -218,6 +218,17 @@ _groundDbConstructor = function(collection, options) {
     _removeLocalOnly.call(self);
   };
 
+  self.clear = function() {
+    // Clean storage
+    self.storage.clear();
+
+    // Set empty map
+    _groundUtil.setDatabaseMap(self, {});
+
+    // Invalidate the database
+    _groundUtil.invalidateDb(self);
+  };
+
   // Add the emitter of "changed" events
   _addChangedEmitter.call(self);
 
