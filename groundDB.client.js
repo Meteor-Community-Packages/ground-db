@@ -212,6 +212,12 @@ _groundDbConstructor = function(collection, options) {
   if (options.cleanupLocalData && !self.offlineDatabase)
     _cleanUpLocalData.call(self);
 
+  // Add api for Clean up local only data
+  self.removeLocalOnly = function() {
+    self.isCleanedUp = true;
+    _removeLocalOnly.call(self);
+  };
+
   // Add the emitter of "changed" events
   _addChangedEmitter.call(self);
 
@@ -260,16 +266,6 @@ Ground.Collection = function(name, options) {
   // Return grounded collection - We dont return this eg if it was an instance
   // of Ground.Collection
   return self;
-};
-
-/**
- * Clean up local only data
- */
-Ground.Collection.prototype.removeLocalOnly = function() {
-  var self = this;
-
-  self.isCleanedUp = true;
-  _removeLocalOnly.call(self);
 };
 
 ////////////////////////////////////////////////////////////////////////////////
