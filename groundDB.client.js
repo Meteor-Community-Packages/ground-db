@@ -54,6 +54,8 @@ var _isReloading = false;
 // Add a pointer register of grounded databases
 var _groundDatabases = {};
 
+var noop = function() {};
+
 // This function will add a emitter for the "changed" event
 var _addChangedEmitter = function() {
   var self = this;
@@ -213,20 +215,22 @@ _groundDbConstructor = function(collection, options) {
     _cleanUpLocalData.call(self);
 
   // Add api for Clean up local only data
-  self.removeLocalOnly = function() {
+  self.collection.removeLocalOnly = function() {
     self.isCleanedUp = true;
     _removeLocalOnly.call(self);
   };
 
-  self.clear = function() {
+  self.collection.clear = function() {
     // Clean storage
-    self.storage.clear();
+    self.storage.clear(noop);
 
-    // Set empty map
-    _groundUtil.setDatabaseMap(self, {});
+    // Empty collection
+    self._collection.remove({});
+    // // Set empty map
+    // _groundUtil.setDatabaseMap(self, {});
 
-    // Invalidate the database
-    _groundUtil.invalidateDb(self);
+    // // Invalidate the database
+    // _groundUtil.invalidateDb(self);
   };
 
   // Add the emitter of "changed" events
