@@ -1,6 +1,10 @@
 # Changelog
 
 ## vCurrent
+## [v0.3.4] (https://github.com/GroundMeteor/db/tree/v0.3.4)
+#### 02/02/15 by Morten Henriksen
+- Make removeLocalOnly accessible - thanks @jperl
+
 ## [v0.3.3] (https://github.com/GroundMeteor/db/tree/v0.3.3)
 #### 01/02/15 by Morten Henriksen
 ## [v0.3.2] (https://github.com/GroundMeteor/db/tree/v0.3.2)
