@@ -454,7 +454,7 @@ var _loadDatabase = function() {
       _groundUtil.each(_checkDocs.call(self, docs || {} ), function(doc) {
         // Test if document allready exists, this is a rare case but accounts
         // sometimes adds data to the users database, eg. if "users" are grounded
-        var exists = self._collection.findOne({ _id: doc._id });
+        var exists = self._collection._docs._map[doc._id];
         // If collection is populated before we get started then the data in
         // memory would be considered latest therefor we dont load from local
         if (!exists) {
