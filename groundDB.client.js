@@ -451,10 +451,11 @@ var _loadDatabase = function() {
       var docs = data && MiniMaxDB.maxify(data) || {};
 
       // Initialize client documents
-      _groundUtil.each(_checkDocs.call(self, docs || {} ), function(doc) {
+      Kernel
+      .each(_checkDocs.call(self, docs || {} ), function(doc) {
         // Test if document allready exists, this is a rare case but accounts
         // sometimes adds data to the users database, eg. if "users" are grounded
-        var exists = self._collection.findOne({ _id: doc._id });
+        var exists = self._collection.findOne(doc._id);
         // If collection is populated before we get started then the data in
         // memory would be considered latest therefor we dont load from local
         if (!exists) {
@@ -464,11 +465,11 @@ var _loadDatabase = function() {
           }
           self._collection.insert(doc);
         }
+      })
+      .then(function() {
+        // Setting database loaded, this allows minimongo to be saved into local
+        self._databaseLoaded = true;
       });
-
-
-      // Setting database loaded, this allows minimongo to be saved into local
-      self._databaseLoaded = true;
 
     }
 
