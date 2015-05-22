@@ -220,9 +220,12 @@ _groundDbConstructor = function(collection, options) {
     _removeLocalOnly.call(self);
   };
 
-  self.collection.clear = function() {
+  self.collection.clear = function(callback) {
+    
+    if (typeof callback != 'function') { callback = noop; }
+    
     // Clean storage
-    self.storage.clear(noop);
+    self.storage.clear(callback);
 
     // Empty collection
     self._collection.remove({});
