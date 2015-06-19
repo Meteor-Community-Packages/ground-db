@@ -9,7 +9,7 @@ GroundDB is a fast and thin layer providing Meteor offline database and methods 
 ```
 
 ## Meteor Collection Interface
-GroundDB is like a normal `Meteor.Collection` - but changes and outstanding methods are cached and resumed.
+GroundDB is like a normal `Meteor.Collection` - but changes and outstanding methods are cached and resumed. *Turn off resume by setting the option `resume: false`*
 
 [Live basic debug test](http://grounddb.meteor.com/)
 
