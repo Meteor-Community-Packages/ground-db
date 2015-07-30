@@ -888,7 +888,7 @@ var _syncDatabase = function() {
           throw err;
         } else {
           // Get the data back in size
-          var newDocs = MiniMaxDB.maxify(data);
+          var newDocs = MiniMaxDB.maxify(data) || {};
 
           self.collection.find().forEach(function(doc) {
             // Remove document
