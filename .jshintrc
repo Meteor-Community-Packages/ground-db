@@ -31,13 +31,13 @@
                                 //   "double" : require double quotes
     "undef"         : true,     // true: Require all non-global variables to be declared (prevents global leaks)
     "unused"        : true,     // true: Require all defined variables be used
-    "strict"        : true,     // true: Requires all functions run in ES5 Strict Mode
+    "strict"        : false,     // true: Requires all functions run in ES5 Strict Mode
     "trailing"      : true,     // true: Prohibit trailing whitespaces
     "maxparams"     : false,    // {int} Max number of formal params allowed per function
     "maxdepth"      : false,    // {int} Max depth of nested blocks (within functions)
     "maxstatements" : false,    // {int} Max number statements per function
     "maxcomplexity" : false,    // {int} Max cyclomatic complexity per function
-    "maxlen"        : 80,       // {int} Max number of characters per line
+    "maxlen"        : 140,       // {int} Max number of characters per line
 
     // Relaxing
     "asi"           : false,     // true: Tolerate Automatic Semicolon Insertion (no semicolons)
@@ -105,10 +105,10 @@
         "Assets",
         "Packages",
         "process",
-        "GroundDB",
         "_gDB",
         "LocalCollection",
         "_",
-        "Random"
+        "Random",
+        "Tracker"
     ]       // additional predefined global variables
 }
