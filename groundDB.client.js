@@ -65,17 +65,17 @@ var _isReloading = false;
 // Add a pointer register of grounded databases
 var _groundDatabases = {};
 
-var noop = function() {};
+var noop = function noop() {};
 
 // This function will add a emitter for the "changed" event
-var _addChangedEmitter = function() {
+var _addChangedEmitter = function _addChangedEmitter() {
   var self = this;
   // Reactive deps for when data changes
   var _dataChanged = new Tracker.Dependency();
 
-  var _changeData = function() { _dataChanged.changed(); };
+  var _changeData = function _changeData() { _dataChanged.changed(); };
 
-  Tracker.autorun(function() {
+  Tracker.autorun(function _changeDataAutorun() {
     // Depend on data change
     _dataChanged.depend();
     // Emit changed
@@ -92,12 +92,12 @@ var _addChangedEmitter = function() {
 };
 
 // Clean up the local data and align to the subscription
-var _cleanUpLocalData = function() {
+var _cleanUpLocalData = function _cleanUpLocalData() {
   var self = this;
   // Flag marking if the local data is cleaned up to match the subscription
   self.isCleanedUp = false;
 
-  Tracker.autorun(function(computation) {
+  Tracker.autorun(function _cleanUpLocalDataAutorun(computation) {
     if (Ground.ready() && !self.isCleanedUp) {
       // If all subscriptions have updated the system then remove all local only
       // data?
@@ -112,14 +112,14 @@ var _cleanUpLocalData = function() {
 };
 
 // Setup the syncronization of tabs
-var _setupTabSyncronizer = function() {
+var _setupTabSyncronizer = function _setupTabSyncronizer() {
   var self = this;
   // We check to see if database sync is supported, if so we sync the database
   // if data has changed in other tabs
   if (typeof _syncDatabase === 'function') {
 
     // Listen for data changes
-    self.storage.addListener('storage', function() {
+    self.storage.addListener('storage', function _setupTabSyncronizerListener() {
 
       // Database changed in another tab - sync this db
       _syncDatabase.call(self);
@@ -130,11 +130,11 @@ var _setupTabSyncronizer = function() {
 };
 
 // Rig the change listener and make sure to store the data to local storage
-var _setupDataStorageOnChange = function() {
+var _setupDataStorageOnChange = function _setupDataStorageOnChange() {
   var self = this;
 
   // Add listener, is triggered on data change
-  self.collection.addListener('changed', function() {
+  self.collection.addListener('changed', function _setupDataStorageOnChangeListener() {
 
     // Store the database in store when ever theres a change
     // the _saveDatabase will throttle to optimize
@@ -144,7 +144,7 @@ var _setupDataStorageOnChange = function() {
 };
 
 // This is the actual grounddb instance
-var _groundDbConstructor = function(collection, options) {
+var _groundDbConstructor = function _groundDbConstructor(collection, options) {
   var self = this;
 
   // Check if user used the "new" keyword
@@ -228,12 +228,12 @@ var _groundDbConstructor = function(collection, options) {
   }
 
   // Add api for Clean up local only data
-  self.collection.removeLocalOnly = function() {
+  self.collection.removeLocalOnly = function removeLocalOnly() {
     self.isCleanedUp = true;
     _removeLocalOnly.call(self);
   };
 
-  self.collection.clear = function(callback) {
+  self.collection.clear = function clear(callback) {
 
     if (typeof callback !== 'function') { callback = noop; }
 
@@ -264,7 +264,7 @@ var _groundDbConstructor = function(collection, options) {
 };
 
 // Global helper for applying grounddb on a collection
-Ground.Collection = function(name, options) {
+Ground.Collection = function groundCollection(name, options) {
   var self;
 
   // Inheritance Meteor Collection can be set by options.collection
@@ -375,7 +375,7 @@ collections - grounded or not...
 We could wait until OT is supported in core?
 
 */
-var _hackMeteorUpdate = function() {
+var _hackMeteorUpdate = function _hackMeteorUpdate() {
   var self = this;
 
   // Super container
@@ -386,7 +386,7 @@ var _hackMeteorUpdate = function() {
     // Set super
     _super = self.connection._stores[ self.name ].update;
     // Overwrite
-    self.connection._stores[ self.name ].update = function (msg) {
+    self.connection._stores[ self.name ].update = function groundUpdate(msg) {
       // console.log('GOT UPDATE');
       var mongoId = msg.id && _groundUtil.idParse(msg.id);
       var doc = msg.id && self._collection.findOne(mongoId);
@@ -414,7 +414,7 @@ var _hackMeteorUpdate = function() {
 
 // We dont trust the localstorage so we make sure it doesn't contain
 // duplicated id's - primary a problem i FF
-var _checkDocs = function(a) {
+var _checkDocs = function _checkDocs(a) {
   var c = {};
   // // We create c as an object with no duplicate _id's
   // for (var i = 0, keys = Object.keys(a); i < keys.length; i++) {
@@ -425,7 +425,7 @@ var _checkDocs = function(a) {
   //   c[key] = doc;
   // }
 
-  _groundUtil.each(a, function(doc, key) {
+  _groundUtil.each(a, function iterateDoc(doc, key) {
     c[key] = doc;
   });
   return c;
@@ -433,10 +433,10 @@ var _checkDocs = function(a) {
 
 // At some point we can do a remove all local-only data? Making sure that we
 // Only got the same data as the subscription
-var _removeLocalOnly = function() {
+var _removeLocalOnly = function _removeLocalOnly() {
   var self = this;
 
-  _groundUtil.each(self._localOnly, function(isLocalOnly, id) {
+  _groundUtil.each(self._localOnly, function _loadDatabaseEach(isLocalOnly, id) {
     if (isLocalOnly) {
       self._collection.remove({ _id: id });
       delete self._localOnly[id];
@@ -445,7 +445,7 @@ var _removeLocalOnly = function() {
 };
 
 // Bulk Load database from local to memory
-var _loadDatabase = function() {
+var _loadDatabase = function _loadDatabase() {
   var self = this;
   // Then load the docs into minimongo
 
@@ -454,7 +454,7 @@ var _loadDatabase = function() {
   Ground.emit('resume', { type: 'database', collection: self.name });
 
   // Load object from localstorage
-  self.storage.getItem('data', function(err, data) {
+  self.storage.getItem('data', function storageGetItem(err, data) {
     if (!err) {
 
       self.collection.emit('resumed', { type: 'database', data: data });
@@ -465,7 +465,7 @@ var _loadDatabase = function() {
 
       // Initialize client documents
       Kernel
-      .each(_checkDocs.call(self, docs || {} ), function(doc) {
+      .each(_checkDocs.call(self, docs || {} ), function kernelEach(doc) {
         // Test if document allready exists, this is a rare case but accounts
         // sometimes adds data to the users database, eg. if "users" are grounded
         var exists = self._collection.findOne(doc._id);
@@ -479,7 +479,7 @@ var _loadDatabase = function() {
           self._collection.insert(doc);
         }
       })
-      .then(function() {
+      .then(function afterKernelEach() {
         // Setting database loaded, this allows minimongo to be saved into local
         self._databaseLoaded = true;
       });
@@ -491,12 +491,12 @@ var _loadDatabase = function() {
 
 // Bulk Save database from memory to local, meant to be as slim, fast and
 // realiable as possible
-var _saveDatabase = function() {
+var _saveDatabase = function _saveDatabase() {
   var self = this;
   // If data loaded from localstorage then its ok to save - otherwise we
   // would override with less data
   if (self._databaseLoaded && _isReloading === false) {
-    self._saveDatabaseTimeout(function() {
+    self._saveDatabaseTimeout(function _saveDatabaseTimeout() {
       // We delay the operation a bit in case of multiple saves - this creates
       // a minor lag in terms of localstorage updating but it limits the num
       // of saves to the database
@@ -505,7 +505,7 @@ var _saveDatabase = function() {
       Ground.emit('cache', { type: 'database', collection: self.name });
       var minifiedDb = MiniMaxDB.minify(_groundUtil.getDatabaseMap(self));
       // Save the collection into localstorage
-      self.storage.setItem('data', minifiedDb, function(err) {
+      self.storage.setItem('data', minifiedDb, function storageCache(err) {
         // Emit feedback
         if (err) {
           // Emit error
@@ -529,20 +529,20 @@ var _saveDatabase = function() {
 // possible yet
 Ground.ready = _groundUtil.allSubscriptionsReady;
 
-Ground.lookup = function(collectionName) {
+Ground.lookup = function groundLookup(collectionName) {
   return _groundDatabases[collectionName];
 };
 
 var _allowMethodResumeMap = {};
 var _methodResumeConnections = [];
 
-var addConnectionToResume = function(connection) {
+var addConnectionToResume = function addConnectionToResume(connection) {
   if (_methodResumeConnections.indexOf(connection) < 0) {
     _methodResumeConnections.push(connection);
   }
 };
 
-Ground.methodResume = function(names, connection) {
+Ground.methodResume = function methodResume(names, connection) {
   // Allow string or array of strings
   if (names === ''+names) {
     names = [names];
@@ -562,7 +562,7 @@ Ground.methodResume = function(names, connection) {
 };
 
 // Add settings for methods to skip or not when caching methods
-Ground.skipMethods = function() {
+Ground.skipMethods = function skipMethods() {
   throw new Error('Ground.skipMethods is deprecated, use Ground.methodResume instead');
 };
 
@@ -575,22 +575,22 @@ var _methodsResumed = false;
 var _methodsResumedDeps = new Tracker.Dependency();
 
 
-Ground.isResumed = function() {
+Ground.isResumed = function isResumed() {
   _methodsResumedDeps.depend();
   return _methodsResumed;
 };
 
 // Get a nice array of current methods
-var _getMethodsList = function() {
+var _getMethodsList = function _getMethodsList() {
   // Array of outstanding methods
   var methods = [];
   // Made a public API to disallow caching of some method calls
   // Convert the data into nice array
 
   // We iterate over the connections that have resumable methods
-  _groundUtil.each(_methodResumeConnections, function(connection) {
+  _groundUtil.each(_methodResumeConnections, function resumeEachConnection(connection) {
     // We run through the method invokers
-    _groundUtil.each(connection._methodInvokers, function(method) {
+    _groundUtil.each(connection._methodInvokers, function resumeEachInvoker(method) {
       // Get the method name
       var name = method._message.method;
       // Check that this method is resumeable and on the correct connection
@@ -617,7 +617,7 @@ var _getMethodsList = function() {
 // method callback. This could happen if the user submits a change in one window
 // and then switches to another tab and submits a change there before the first
 // method gets back?
-var _flushInMemoryMethods = function() {
+var _flushInMemoryMethods = function _flushInMemoryMethods() {
   var didFlushSome = false;
   // TODO: flush should be rewritten to - we should do method proxy stuff...
   // This code is a bit dirty
@@ -647,7 +647,7 @@ var _flushInMemoryMethods = function() {
 };
 
 // Extract only newly added methods from localstorage
-var _getMethodUpdates = function(newMethods) {
+var _getMethodUpdates = function _getMethodUpdates(newMethods) {
   var result = [];
   if (newMethods && newMethods.length > 0) {
     // Get the old methods allready in memory
@@ -702,7 +702,7 @@ var _methodsStorage = Store.create({
   version: 1.1
 });
 
-var _sendMethod = function(method, connection) {
+var _sendMethod = function _sendMethod(method, connection) {
   // Send a log message first to the test
   test.log('SEND', JSON.stringify(method));
 
@@ -711,7 +711,7 @@ var _sendMethod = function(method, connection) {
   }
 
   connection.apply(
-    method.method, method.args, method.options, function(err, result) {
+    method.method, method.args, method.options, function resumeMethodCallback(err, result) {
       // We cant fix the missing callbacks made at runtime the
       // last time the app ran. But we can emit data
 
@@ -736,13 +736,13 @@ var waitingMethods = [];
 // create patch calls instead of resume.
 var resumeAttemptsLeft = 5;
 
-var resumeWaitingMethods = function() {
+var resumeWaitingMethods = function resumeWaitingMethods() {
   var missing = [];
 
   resumeAttemptsLeft--;
 
   // Resume each method
-  _groundUtil.each(waitingMethods, function(method) {
+  _groundUtil.each(waitingMethods, function eachWaitingMethods(method) {
     if (method) {
 
       // name helper for the method
@@ -757,7 +757,7 @@ var resumeWaitingMethods = function() {
         // locally
         if (methodConnection) {
 
-          _groundUtil.connection.stubFence(name, function() {
+          _groundUtil.connection.stubFence(name, function runFencedMethod() {
             // Add method to connection
             _sendMethod(method, methodConnection);
           });
@@ -788,8 +788,8 @@ var resumeWaitingMethods = function() {
 };
 
 
-var loadMissingMethods = function(callback) {
-  _methodsStorage.getItem('methods', function(err, data) {
+var loadMissingMethods = function loadMissingMethods(callback) {
+  _methodsStorage.getItem('methods', function storageLoadMissingMethods(err, data) {
     test.log('RESUME', 'methods loaded into memory');
     if (err) {
       // XXX:
@@ -806,9 +806,9 @@ var loadMissingMethods = function(callback) {
 };
 
 // load methods from localstorage and resume the methods
-var _loadMethods = function() {
+var _loadMethods = function _loadMethods() {
 
-  loadMissingMethods(function(err) {
+  loadMissingMethods(function loadMissingMethods(err) {
     if (err) {
       test.log('RESUME', 'Could not load missing methods into memory', err);
     } else {
@@ -819,7 +819,7 @@ var _loadMethods = function() {
       // If not all methods are resumed then try until success
       if (!_methodsResumed) {
 
-        var interval = Meteor.setInterval(function() {
+        var interval = Meteor.setInterval(function loadMissingMethodsInterval() {
           // Try to resume missing methods
           resumeWaitingMethods();
 
@@ -837,7 +837,7 @@ var _loadMethods = function() {
 }; // EO load methods
 
 // Save the methods into the localstorage
-var _saveMethods = function() {
+var _saveMethods = function _saveMethods() {
   if (_methodsResumed) {
 
     // Ok memory is initialized
@@ -846,7 +846,7 @@ var _saveMethods = function() {
     // Save outstanding methods to localstorage
     var methods = _getMethodsList();
 //test.log('SAVE METHODS', JSON.stringify(methods));
-    _methodsStorage.setItem('methods', MiniMaxMethods.minify(methods), function() {
+    _methodsStorage.setItem('methods', MiniMaxMethods.minify(methods), function storage_saveMethods() {
       // XXX:
     });
 
@@ -855,7 +855,7 @@ var _saveMethods = function() {
 
 //////////////////////////// STARTUP METHODS RESUME ////////////////////////////
 
-Meteor.startup(function() {
+Meteor.startup(function startupMethodResume() {
   // Wait some not to conflict with accouts login
   // TODO: Do we have a better way, instead of depending on time should depend
   // on en event.
@@ -872,17 +872,17 @@ var syncDatabaseTimeout = new OneTimeout(150);
 // Offline client only databases will sync a bit different than normal
 // This function is a bit hard - but it works - optimal solution could be to
 // have virtual method calls it would complicate things
-var _syncDatabase = function() {
+var _syncDatabase = function _syncDatabase() {
   var self = this;
   // We set a small delay in case of more updates within the wait
-  syncDatabaseTimeout(function() {
+  syncDatabaseTimeout(function syncDatabaseTimeout() {
 //    if (self && (self.offlineDatabase === true || !Meteor.status().connected)) {
     if (self) {
       // Add event hook
       self.collection.emit('sync');
       Ground.emit('sync', { type: 'database', collection: self.name });
       // Hard reset database?
-      self.storage.getItem('data', function(err, data) {
+      self.storage.getItem('data', function storageSyncFetch(err, data) {
         if (err) {
           //
           throw err;
@@ -890,7 +890,7 @@ var _syncDatabase = function() {
           // Get the data back in size
           var newDocs = MiniMaxDB.maxify(data) || {};
 
-          self.collection.find().forEach(function(doc) {
+          self.collection.find().forEach(function storageSyncFetchEach(doc) {
             // Remove document
             self._collection.remove(doc._id);
             // If found in new documents then hard update
@@ -901,7 +901,7 @@ var _syncDatabase = function() {
             }
           });
 
-          _groundUtil.each(newDocs, function (doc) {
+          _groundUtil.each(newDocs, function storageSyncFetchEachNew(doc) {
             // insert doc
             self._collection.insert(doc);
           });
@@ -916,17 +916,17 @@ var _syncDatabase = function() {
 var syncMethodsTimeout = new OneTimeout(500);
 
 // Syncronize tabs via method calls
-var _syncMethods = function() {
+var _syncMethods = function _syncMethods() {
   // We are going to into reload, stop all access to localstorage
   _isReloading = true;
   // We are not master and the user is working on another tab, we are not in
   // a hurry to spam the browser with work, plus there are typically acouple
   // of db access required in most operations, we wait a sec?
-  syncMethodsTimeout(function() {
+  syncMethodsTimeout(function _syncMethodsTimeout() {
     // Add event hook
     Ground.emit('sync', { type: 'methods' });
     // Load the offline data into our memory
-    _groundUtil.each(_groundDatabases, function(collection, name) {
+    _groundUtil.each(_groundDatabases, function syncMethodsTimeoutEach(collection, name) {
       test.log('SYNC DB', name);
       _loadDatabase.call(collection);
     });
@@ -948,7 +948,7 @@ if (!test.isMain) {
   var _superApply = _groundUtil.Connection.prototype.apply;
   var _superOutstandingMethodFinished = _groundUtil.Connection.prototype._outstandingMethodFinished;
 
-  _groundUtil.Connection.prototype.apply = function(name /* , args, options, callback */) {
+  _groundUtil.Connection.prototype.apply = function applyHook(name /* , args, options, callback */) {
     // Intercept grounded databases
     if (_allowMethodResumeMap[name]) {
       test.debug('APPLY', JSON.stringify(_groundUtil.toArray(arguments)));
@@ -963,7 +963,7 @@ if (!test.isMain) {
     return result;
   };
 
-  _groundUtil.Connection.prototype._outstandingMethodFinished = function() {
+  _groundUtil.Connection.prototype._outstandingMethodFinished = function _outstandingMethodFinished() {
       // Call super
       _superOutstandingMethodFinished.apply(this);
       // We save current status of methods
@@ -979,7 +979,7 @@ if (!test.isMain) {
 if (!test.isMain) {
 
   // Sync Methods if changed
-  _methodsStorage.addListener('storage', function() {
+  _methodsStorage.addListener('storage', function storageEventListener() {
     // Method calls are delayed a bit for optimization
     _syncMethods('mehods');
 
@@ -989,7 +989,7 @@ if (!test.isMain) {
 
 ////////////////////////// ADD DEPRECATION NOTICE //////////////////////////////
 if (typeof GroundDB === 'undefined') {
-  GroundDB = function(name, options) {
+  GroundDB = function deprecatedGroundDB(name, options) {
     // Deprecation notice
     console.warn('The GroundDB scope is deprecating!! Use Ground.Collection instead');
     return new Ground.Collection(name, options);
