@@ -21,6 +21,31 @@ Notes for future documentation:
 * Add support for blobs?
 * Add support for indexes?
 
+```js
+  var foo = new Ground.Collection('foo');
+
+  Tracker.autorun(c => {
+    // Track progress
+    console.log('READ', foo.pendingReads.percent.get() + '%', 'done:', foo.pendingReads.isDone());
+    console.log('WRITE', foo.pendingWrites.percent.get() + '%', 'done:', foo.pendingWrites.isDone());
+  });
+
+  foo.once('loaded', (evt) => {
+    // When all the data is loaded subscribe
+    Meteor.subscribe('foo');
+    // If you only want incremental updates
+    // requires the use of createdAt/updatedAt/removedAt pattern
+    // Meteor.subscribe('foo', foo.lastUpdatedAt);
+  });
+
+  // Experimental api
+  foo.shutdown(() => {
+    // Ok, it should be safe to shutdown now - WIP
+  });
+```
+
+
+
 # OLD DOCUMENTATION:
 
 ```js
