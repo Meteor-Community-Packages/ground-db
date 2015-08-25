@@ -3,6 +3,26 @@ ground:db [![Build Status](https://travis-ci.org/GroundMeteor/db.png?branch=Mete
 
 GroundDB is a fast and thin layer providing Meteor offline database and methods - Taking cloud data to the ground.
 
+# Notes
+Notes for future documentation:
+* `Ground.Collection(name, options)` extends `Mongo.Collection` with a few extra options
+* Support for `localstorage`/`indexedDB`/`webSQL`/`SQLlite` *(on cordova)*
+* Pr. document updates (old uses bulk)
+* Added async loading - this should improve performance even on large datasets
+
+#### WIP
+* Conflict handling (method resume/removal/updates of documents)
+* Add document compression?
+* Only subscribe to actual updates - prevent refetching
+* Handle storage errors - eg. when hitting limits
+* Storage quota handling?
+* Add test coverage
+* Add tab sync - maybe as a seperate package?
+* Add support for blobs?
+* Add support for indexes?
+
+# OLD DOCUMENTATION:
+
 ```js
   // Return a grounded Meteor.Collection
   var list = new Ground.Collection('list');

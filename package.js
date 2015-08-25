@@ -1,49 +1,36 @@
 Package.describe({
   name: "ground:db",
-  version: "0.3.11",
+  version: "1.0.0-alpha.1",
   summary: "Ground Meteor.Collections offline",
   git: "https://github.com/GroundMeteor/db.git"
 });
 
 Package.onUse(function (api) {
-  api.versionsFrom('1.0');
-
-  api.use('meteor-platform', ['client', 'server']);
+  api.versionsFrom('METEOR@1.2-rc.4');
+  api.use(['ecmascript', 'mongo-id', 'reactive-var', 'diff-sequence', 'mongo']);
 
   api.use([
-    'meteor',
     'underscore',
-    'minimongo',
-    'ejson',
-    'ground:util@0.1.14',
     'ground:servertime@0.0.3',
-    //'ground:minimax@1.1.3', // Its implied by ground:util
-    'ground:localstorage@0.1.8',
-    'raix:eventemitter@0.1.1',
-    'raix:stubfence@1.0.1',
-    'raix:onetimeout@1.0.3'
+    'raix:localforage@1.2.4-rc.1',
+    'raix:eventstate@0.0.2',
   ], ['client', 'server']);
 
-  // Make sure any storage adapters are loaded first
-  // api.use([
-  //   'ground:localstorage'
-  // ], 'client', { weak: true });
-
   api.export('Ground');
-  api.export('GroundDB');
 
   api.use(['tracker', 'dispatch:kernel@0.0.6'], 'client');
 
-
-  //api.use([], 'server');
-  //api.use(['localstorage', 'ejson'], 'client');
   api.addFiles([
-    'groundDB.client.js',
-    'wrap.collection.js',
-    'wrap.eventemitter.js',
-    'wrap.proto.eventemitter.js',
+    'lib/common/mongo.collection.modification.js'
+  ], ['client', 'server']);
+
+  api.addFiles([
+    'lib/client/pending.jobs.js',
+    'lib/client/ground.db.js',
+    'lib/client/wrap.collection.js',
+    'lib/client/wrap.eventemitter.js',
     ], 'client');
-  api.addFiles('groundDB.server.js', 'server');
+  api.addFiles('lib/server/ground.db.js', 'server');
 });
 
 Package.onTest(function (api) {

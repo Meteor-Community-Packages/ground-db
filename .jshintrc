@@ -109,6 +109,7 @@
         "LocalCollection",
         "_",
         "Random",
-        "Tracker"
+        "Tracker",
+        "MongoID"
     ]       // additional predefined global variables
 }
