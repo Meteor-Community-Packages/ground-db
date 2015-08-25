@@ -1,6 +1,6 @@
 Package.describe({
   name: "ground:db",
-  version: "1.0.0-alpha.1",
+  version: "1.0.0-alpha.2",
   summary: "Ground Meteor.Collections offline",
   git: "https://github.com/GroundMeteor/db.git"
 });
@@ -11,7 +11,7 @@ Package.onUse(function (api) {
 
   api.use([
     'underscore',
-    'ground:servertime@0.0.3',
+    'ground:servertime@0.0.4-rc.1',
     'raix:localforage@1.2.4-rc.1',
     'raix:eventstate@0.0.2',
   ], ['client', 'server']);
