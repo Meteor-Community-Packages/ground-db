@@ -25,6 +25,10 @@ GroundDB is like a normal `Meteor.Collection` - but changes and outstanding meth
 * Uses `EJSON.minify` and `EJSON.maxify` to compress data in localstorage
 * *In the future there will be a customizable conflict handler on the server-side*
 
+## Current development
+Current development is the Meteor 1.2 ES2015 localforage version `ground:db@1.0.0-alpha.x` [branch](https://github.com/GroundMeteor/db/tree/es2015-localforage) is tracked in [#118](https://github.com/GroundMeteor/db/issues/118)
+It supports nearly all types of storage even sqlite on cordova and will have better performance and general resumeability - that said it's also an api breaking version.
+
 ## Creating a Ground.Collection object (variants)
 ```js
 
