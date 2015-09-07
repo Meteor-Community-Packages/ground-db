@@ -441,7 +441,7 @@ var _removeLocalOnly = function _removeLocalOnly(query) {
 
   _groundUtil.each(self._localOnly, function _loadDatabaseEach(isLocalOnly, id) {
     if (isLocalOnly) {
-      self._collection.remove(_.extend({}, query, { _id: id }));
+      self._collection.remove({ $and: [{ _id: id }, query] });
       delete self._localOnly[id];
     }
   });
