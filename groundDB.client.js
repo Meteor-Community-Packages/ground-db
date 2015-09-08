@@ -228,9 +228,10 @@ var _groundDbConstructor = function _groundDbConstructor(collection, options) {
   }
 
   // Add api for Clean up local only data
-  self.collection.removeLocalOnly = function removeLocalOnly() {
+  // If passing query we'll remove only those that pass it (and of course are only local)
+  self.collection.removeLocalOnly = function removeLocalOnly(query) {
     self.isCleanedUp = true;
-    _removeLocalOnly.call(self);
+    _removeLocalOnly.call(self, query);
   };
 
   self.collection.clear = function clear(callback) {
@@ -433,12 +434,14 @@ var _checkDocs = function _checkDocs(a) {
 
 // At some point we can do a remove all local-only data? Making sure that we
 // Only got the same data as the subscription
-var _removeLocalOnly = function _removeLocalOnly() {
+// If passing query we'll remove only those that pass it (and of course are only local)
+var _removeLocalOnly = function _removeLocalOnly(query) {
   var self = this;
+  query = query || {};
 
   _groundUtil.each(self._localOnly, function _loadDatabaseEach(isLocalOnly, id) {
     if (isLocalOnly) {
-      self._collection.remove({ _id: id });
+      self._collection.remove({ $and: [{ _id: id }, query] });
       delete self._localOnly[id];
     }
   });
