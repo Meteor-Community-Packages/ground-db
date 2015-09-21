@@ -1,3 +1,4 @@
+/* global _groundDbConstructor:true */
 /*
 
 
@@ -7,11 +8,11 @@ TODO:
 */
 ///////////////////////////////// TEST SCOPE ///////////////////////////////////
 
-Meteor.server = Meteor.server || Meteor.default_server;
+Meteor.server = Meteor.server || Meteor.default_server; // jshint ignore:line
 
 //////////////////////////////// GROUND DATABASE ///////////////////////////////
 
-_groundDbConstructor = function(collection, options) {
+_groundDbConstructor = function(collection, options) { // jshint ignore:line
   var self;
   // XXX: Write the grounddb constructor
 
@@ -81,8 +82,9 @@ Ground.Collection = function(name, options) {
   }
 
   // Throw an error if something went wrong
-  if (!(self instanceof _groundUtil.Collection))
+  if (!(self instanceof _groundUtil.Collection)) {
     throw new Error('Ground.Collection expected a Mongo.Collection');
+  }
 
   // Add grounddb to the collection, circular reference since self is
   // grounddb.collection

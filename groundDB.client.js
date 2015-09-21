@@ -849,7 +849,7 @@ var _saveMethods = function _saveMethods() {
     // Save outstanding methods to localstorage
     var methods = _getMethodsList();
 //test.log('SAVE METHODS', JSON.stringify(methods));
-    _methodsStorage.setItem('methods', MiniMaxMethods.minify(methods), function storage_saveMethods() {
+    _methodsStorage.setItem('methods', MiniMaxMethods.minify(methods), function storage_saveMethods() { // jshint ignore:line
       // XXX:
     });
 

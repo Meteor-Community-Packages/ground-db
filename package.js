@@ -1,21 +1,19 @@
 Package.describe({
   name: "ground:db",
-  version: "0.3.12",
+  version: "0.3.14-rc.2",
   summary: "Ground Meteor.Collections offline",
   git: "https://github.com/GroundMeteor/db.git"
 });
 
 Package.onUse(function (api) {
-  api.versionsFrom('1.0');
-
-  api.use('meteor-platform', ['client', 'server']);
+  api.versionsFrom('1.2-rc.15');
 
   api.use([
     'meteor',
     'underscore',
     'minimongo',
     'ejson',
-    'ground:util@0.1.14',
+    'ground:util@0.1.15',
     'ground:servertime@0.0.3',
     //'ground:minimax@1.1.3', // Its implied by ground:util
     'ground:localstorage@0.1.8',

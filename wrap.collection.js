@@ -29,8 +29,9 @@ _groundUtil.Collection.prototype.insert = function(/* arguments */) {
   var args = _.toArray(arguments);
 
   // Only make sure _id is set if grounddb is mounted
-  if (this.grounddb)
+  if (this.grounddb) {
     args[0]._id = args[0]._id || this._makeNewID();
+  }
 
   // Call super
   return _super.apply(this, args);
