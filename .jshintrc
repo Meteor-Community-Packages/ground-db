@@ -94,6 +94,7 @@
 		"blurElement",
 		"canonicalizeHtml",
 		"clickElement",
+		"clickIt",
 		"focusElement",
 		"getStyleProperty",
 		"makeTestConnection",

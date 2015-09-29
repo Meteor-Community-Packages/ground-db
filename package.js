@@ -1,6 +1,6 @@
 Package.describe({
   name: "ground:db",
-  version: "0.3.14-rc.3",
+  version: "0.3.14",
   summary: "Ground Meteor.Collections offline",
   git: "https://github.com/GroundMeteor/db.git"
 });
@@ -13,13 +13,13 @@ Package.onUse(function (api) {
     'underscore',
     'minimongo',
     'ejson',
-    'ground:util@0.1.16',
+    'ground:util@0.1.17',
     'ground:servertime@0.0.3',
     //'ground:minimax@1.1.3', // Its implied by ground:util
-    'ground:localstorage@0.1.8',
-    'raix:eventemitter@0.1.1',
-    'raix:stubfence@1.0.1',
-    'raix:onetimeout@1.0.3'
+    'ground:localstorage@0.1.9',
+    'raix:eventemitter@0.1.3',
+    'raix:stubfence@1.0.3',
+    'raix:onetimeout@1.0.4'
   ], ['client', 'server']);
 
   // Make sure any storage adapters are loaded first
