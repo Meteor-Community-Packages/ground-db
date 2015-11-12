@@ -109,7 +109,7 @@ or
 ```
 
 ## Resume of outstanding methods
-Database changes and methods will be sent to the server just like normal. The methods are sent to server after relogin - this way `this.userId` isset when running on the server. In other words: `Just like normal`
+Database changes and methods will be sent to the server just like normal. The methods are sent to server after relogin - this way `this.userId` is set when running on the server. In other words: `Just like normal`
 
 ## Publish and subscription
 ### Online
