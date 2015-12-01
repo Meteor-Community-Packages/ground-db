@@ -85,7 +85,7 @@ If localstorage is not supported the groundDB simply work as a normal `Meteor.Co
 ## Concept
 Localstorage is simple and widely supported - but slow - *Thats why we only use it for caching databases and methods + trying to limit the read and writes from it.*
 
-GroundDB saves outstanding methods and minimongo db into localstorage - The number of saves to localstorage is minimized. *Use `Ground.resumeMethods`*
+GroundDB saves outstanding methods and minimongo db into localstorage - The number of saves to localstorage is minimized. *Use `Ground.methodResume`*
 
 When the app loads GroundDB resumes methods and database changes - made when offline and browser closed.
 
@@ -152,7 +152,22 @@ Use the `Ground.methodResume` to cache method calls on a collection. It takes th
     '/' + self.name + '/remove',
     '/' + self.name + '/update'
   ], self.connection);
+
+  // Given the following Server Methods:
+  Meteor.methods({
+    method1: function () { ... },
+    method2: function (param1) { ... },
+    method3: function (param1, param2) { ... }
+  });
+  
+  // Now make method1 and method2 resumable and autoresume
+  // after a connection has been established:
+  Ground.methodResume(['method1', 'method2']);
+  
+  // Make also method3 resumeable:
+  Ground.methodResume('method3');
 ```
+
 *The `Ground.skipMethods` is deprecated*
 
 ## Conflict handling *IN the works - not ready for use yet*
