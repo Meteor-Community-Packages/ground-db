@@ -485,6 +485,8 @@ var _loadDatabase = function _loadDatabase() {
       .then(function afterKernelEach() {
         // Setting database loaded, this allows minimongo to be saved into local
         self._databaseLoaded = true;
+        self.collection.emit('loaded', { type: 'database', data: data });
+        Ground.emit('loaded', { type: 'database', collection: self.name });        
       });
 
     }
