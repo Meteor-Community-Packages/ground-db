@@ -13,7 +13,7 @@ Package.onUse(function (api) {
     'underscore',
     'ground:servertime@0.0.4-rc.1',
     'raix:localforage@1.2.4-rc.1',
-    'raix:eventstate@0.0.2',
+    'raix:eventstate@0.0.4',
   ], ['client', 'server']);
 
   api.export('Ground');
