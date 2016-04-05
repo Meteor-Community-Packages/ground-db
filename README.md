@@ -1,223 +1,67 @@
-ground:db [![Build Status](https://travis-ci.org/GroundMeteor/db.png?branch=Meteor-0-9-1)](https://travis-ci.org/GroundMeteor/db) [![Deps Status](http://checkdeps.meteor.com/badge/GroundMeteor/db/Meteor-0-9-1)](http://checkdeps.meteor.com/GroundMeteor/db) 
+ground:db [![Build Status](https://travis-ci.org/GroundMeteor/db.png?branch=grounddb-caching-2016)](https://travis-ci.org/GroundMeteor/db)
 ==========
 
-GroundDB is a fast and thin layer providing Meteor offline database and methods - Taking cloud data to the ground.
+GroundDB is a fast and thin layer providing Meteor offline database - Taking cloud data to the ground.
 
-# Notes
-Notes for future documentation:
-* `Ground.Collection(name, options)` extends `Mongo.Collection` with a few extra options
-* Support for `localstorage`/`indexedDB`/`webSQL`/`SQLlite` *(on cordova)*
-* Pr. document updates (old uses bulk)
-* Added async loading - this should improve performance even on large datasets
+## Features
+This version of GroundDB is a caching only storage - meaning it does not support resuming of method calls/cross tab updates etc. But it's faster and async supporting local storages like:
+* localstorage
+* indexeddb
+* websql
+~* SQLite (on cordova)~
 
-#### WIP
-* Conflict handling (method resume/removal/updates of documents)
-* Add document compression?
-* Only subscribe to actual updates - prevent refetching
-* Handle storage errors - eg. when hitting limits
-* Storage quota handling?
-* Add test coverage
-* Add tab sync - maybe as a seperate package?
-* Add support for blobs?
-* Add support for indexes?
+*It's using localforage with some minor modifications - hopefully we can use localForage via npm in the future*
 
+## Usage
+
+A pure offline collection
 ```js
-  var foo = new Ground.Collection('foo');
+  foo = new Ground.Collection('test');
+```
+*Ground.Collection is client-side only and depends on `LocalCollection` for now*
 
-  Tracker.autorun(c => {
-    // Track progress
-    console.log('READ', foo.pendingReads.percent.get() + '%', 'done:', foo.pendingReads.isDone());
-    console.log('WRITE', foo.pendingWrites.percent.get() + '%', 'done:', foo.pendingWrites.isDone());
-  });
 
-  foo.once('loaded', (evt) => {
-    // When all the data is loaded subscribe
-    Meteor.subscribe('foo');
-    // If you only want incremental updates
-    // requires the use of createdAt/updatedAt/removedAt pattern
-    // Meteor.subscribe('foo', foo.lastUpdatedAt);
-  });
+Get documents and updates from a Meteor Mongo Collection via DDP
+```js
+  foo = new Ground.Collection('test');
 
-  // Experimental api
-  foo.shutdown(() => {
-    // Ok, it should be safe to shutdown now - WIP
-  });
+  foo.observeSource(bar.find());
+
+  Meteor.setTimeout(() => {
+    // Stop observing - keeping all documents as is
+    foo.stopObserver();
+  }, 1000);
 ```
 
+## Limiting the stored data
 
-
-# OLD DOCUMENTATION:
-
+If you want to clean up the storage and eg. have it match the current subscription, now you can:
 ```js
-  // Return a grounded Meteor.Collection
-  var list = new Ground.Collection('list');
+  foo.keep(bar.find());
 ```
+*This will discard all documents not in the subscribed data*
 
-## Meteor Collection Interface
-GroundDB is like a normal `Meteor.Collection` - but changes and outstanding methods are cached and resumed. *Turn off resume by setting the option `resume: false`*
 
-[Live basic debug test](http://grounddb.meteor.com/)
-
-## Features:
-* Light footprint
-* Broad browser support Chrome, Safari, Firefox and Internet Explorer 9
-* Fallback to normal Meteor.Collection if no local storage
-* Resume of changes in collections
-* Resume of methods
-* Works offline updating cross window tabs
-* Support for [SmartCollection](https://github.com/arunoda/meteor-smart-collections)
-* Support for offline client-side only databases
-* Uses `EJSON.minify` and `EJSON.maxify` to compress data in localstorage
-* *In the future there will be a customizable conflict handler on the server-side*
-
-## Creating a Ground.Collection object (variants)
+Limit the data stored locally
 ```js
-
-  // Return a grounded Meteor.Collection
-  var list = new Ground.Collection('list');
-
-  or
-
-  // Get the groundDB of existing Meteor.Collection
-  var list = new Meteor.Collection('list');
-  var groundList = new Ground.Collection(list);
-
-  or
-
-  // Ground an existing Meteor.Collection  
-  var list = new Meteor.Collection('list');
-  // just ground the database:
-  Ground.Collection(list);
+  foo.keep(bar.find({}, { limit: 30 }));
 ```
-*Example of different patterns. Grounding a `Meteor.Collection` will attach the `cache`, `resume` and `cross tabs update offline`*
+*This will discard all but 30 documents*
 
-## Pure client-side offline databases (variants)
-Ground.Collection can be applied on client-side only eg.: `new Meteor.Collection(null);`
+
+Limit the data stored locall using multiple cursors
 ```js
-
-  // Creates client-side only database, this one maps on suffix `null`
-  var list = new Ground.Collection(null);
-
-  // Creates client-side only database, this one maps on suffix `list` *(Meteor 0.6.5+)*
-  var list = new Ground.Collection('list', { connection: null });
-  
-  or
-
-  // Get the groundDB of existing Meteor.Collection
-  var list = new Meteor.Collection(null);
-  var groundList = new Ground.Collection(list, 'list');
-
-  or
-
-  // Ground an existing Meteor.Collection  
-  var list = new Meteor.Collection(null);
-  // just ground the database and map on suffix `list`
-  Ground.Collection(list, 'list');
+  foo.keep(bar.find({ type: 'a' }, { limit: 30 }), bar.find({ type: 'b' }, { limit: 30 }));
 ```
-*You can only have one grounded collection with name null*
+*This will keep at max 60 documents 30 documents of each type "a"/"b"*
 
-## Support
-Tested on Chrome, Safari, Firefox and IE9 *(though appcache is not supported in IE9 tabs are updated when offline)* - but all browsers that support localstorage *contains a FF safe test of localstorage*
 
-If localstorage is not supported the groundDB simply work as a normal `Meteor.Collection`
-
-## Concept
-Localstorage is simple and widely supported - but slow - *Thats why we only use it for caching databases and methods + trying to limit the read and writes from it.*
-
-GroundDB saves outstanding methods and minimongo db into localstorage - The number of saves to localstorage is minimized. *Use `Ground.resumeMethods`*
-
-When the app loads GroundDB resumes methods and database changes - made when offline and browser closed.
-
-## Ground user details
-It's possible to mount an allready existing collection on a `groundDB` eg.:
+## Clear the storage
 ```js
-  Ground.Collection(Meteor.users);
+  foo.clear();
 ```
-*The example will keep `Meteor.user()` returning correct user details - even if offline*
+*This will empty the in memory and the local storage*
 
-## Ground SmartCollections
-It's possible to ground an allready existing `smartCollectin` on a `groundDB` eg.:
-```js
-  var mySmartCollection = new SmartCollection('foo');
-  Ground.Collection(mySmartCollection);
-
-or
-
-  var mySmartCollection = Ground.Collection(new SmartCollection('foo'));
-
-  // use the smart collection
-  mySmartCollection.insert(/* stuff */);
-```
-
-## Resume of outstanding methods
-Database changes and methods will be sent to the server just like normal. The methods are sent to server after relogin - this way `this.userId` isset when running on the server. In other words: `Just like normal`
-
-## Publish and subscription
-### Online
-Subscription behavior when using `GroundDB` - When online it's just like normal `Meteor` so nothing new. If you unsubscribe a collection you can still insert etc. but the data will not be visible on the client.
-### Offline
-When offline the data remains in the local database - since the publish is a server thing. Use the query selector for filtering unwanted data.
-*When reconnected the database will update client subscription and changes will be resumed*
-
-## Events *- client-side*
-The event api is as follows:
-```js
-Ground.lookup = function(collectionName) {};
-Ground.methodResume = function(names, connection) {};
-
-Ground.addListener // Listen to general events
-foo.addListener // Add listener specific to the foo collection
-
-// Reactive status of all subscriptions, ready or not:
-Ground.ready();
-```
-
-DEPRECATED API:
-~~Ground.onQuotaExceeded = function() {};~~
-~~Ground.onResumeDatabase = function(name) {};~~
-~~Ground.onResumeMethods = function() {};~~
-~~Ground.onMethodCall = function(methodCall) {};~~
-~~Ground.onCacheDatabase = function(name) {};~~
-~~Ground.onCacheMethods = function() {};~~
-~~Ground.onTabSync = function(key) {};~~
-~~Ground.skipMethods = function(methodsToSkipObject)~~
-
-## Cache methods
-Use the `Ground.methodResume` to cache method calls on a collection. It takes the method name or array of names. The connection is optional if not set the default connection is used:
-```js
-  // This is how grounddb uses this internally
-  Ground.methodResume([
-    '/' + self.name + '/insert',
-    '/' + self.name + '/remove',
-    '/' + self.name + '/update'
-  ], self.connection);
-```
-*The `Ground.skipMethods` is deprecated*
-
-## Conflict handling *IN the works - not ready for use yet*
-The conflict handling api is as follows:
-```js
-Ground.now(); // Returns server timestamp works on both client and server
-```
-
-## Additional api
-Normally Ground Collections are cleaned up for local only data when subscriptions are ready. But sometimes we might want to local the data later eg. if the db is already populated.
-
-```js
-  var groundList = new Ground.Collection('list', {
-    cleanupLocalData: false
-  });
-
-  // Manually triggering a clean up of local only data
-  groundList.removeLocalOnly();
-
-  // Clear local data - This will empty all local data
-  groundList.clear();
-```
-
-## Future
-* At the moment the conflict resolution is pretty basic last change recieved by server wins. This could be greatly improved by adding a proper conflict handler. *For more details look at comment in server.js*
-* Intelligent subscriptions - A way for the groundDB to keep the data most important for the user - and letting less important data go to match quota limit
 
 ## Contributions
 Feel free to send issues, pull requests all is wellcome
