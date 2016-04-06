@@ -1,30 +1,39 @@
 Package.describe({
-  summary: "\u001b[32mv0.0.15\n"+
-  "\u001b[33m-----------------------------------------\n"+
-  "\u001b[0m GroundDB is a thin layer providing       \n"+
-  "\u001b[0m Meteor offline database and methods      \n"+
-  "\u001b[33m-------------------------------------RaiX\n"
+  name: "ground:db",
+  version: "2.0.0-alpha.1",
+  summary: "Ground Meteor.Collections offline",
+  git: "https://github.com/GroundMeteor/db.git"
 });
 
-Package.on_use(function (api) {
-  "use strict";
-  api.export('GroundDB');
-  api.export('_gDB', ['client', 'server'], {testOnly: true});
-  api.use(['meteor', 'underscore', 'deps', 'random', 'minimongo', 'ejson', 'ejson-minimax'],
-          ['client', 'server']);
-  api.use(['deps'], 'client');
-  //api.use([], 'server');
-  //api.use(['localstorage', 'ejson'], 'client');
-  api.add_files('groundDB.client.js', 'client');
-  api.add_files('groundDB.server.js', 'server');
+Package.onUse(function (api) {
+  api.versionsFrom('METEOR@1.2');
+  api.use(['ecmascript', 'mongo-id', 'reactive-var', 'diff-sequence', 'minimongo']);
+
+  api.use([
+    'underscore',
+    'ejson',
+    'ground:servertime@0.0.4-rc.1',
+    'raix:localforage@1.2.4-rc.1',
+    'raix:eventstate@0.0.2',
+  ], ['client', 'server']);
+
+  api.export('Ground');
+
+  api.use(['tracker', 'dispatch:kernel@0.0.6'], 'client');
+
+  api.addFiles([
+    'lib/client/pending.jobs.js',
+    'lib/client/ground.db.js',
+    ], 'client');
+  api.addFiles('lib/server/ground.db.js', 'server');
 });
 
-Package.on_test(function (api) {
-  api.use('groundDB', ['client']);
+Package.onTest(function (api) {
+  api.use('ground:db', ['client']);
   api.use('test-helpers', 'client');
   api.use(['tinytest', 'underscore', 'ejson', 'ordered-dict',
-           'random', 'deps']);
+           'random', 'tracker']);
 
-  api.add_files('groundDB.client.tests.js', 'client');
-  api.add_files('groundDB.server.tests.js', 'server');
+  api.addFiles('groundDB.client.tests.js', 'client');
+  api.addFiles('groundDB.server.tests.js', 'server');
 });
