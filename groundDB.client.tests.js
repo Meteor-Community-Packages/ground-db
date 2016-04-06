@@ -1,20 +1,11 @@
-"use strict";
+// Tinytest.add('GroundDB - test environment', function(test) {
 
-function equals(a, b) {
-	return !!(JSON.stringify(a) === JSON.stringify(b));
-}
+//   var a = new Ground.Collection('test', {
+//     prefix: 'foobar',
+//     connection: null
+//   });
 
-
-
-
-Tinytest.add('GroundDB - test environment', function(test) {
-
-  var a = new Ground.Collection('test', {
-    prefix: 'foobar',
-    connection: null
-  });
-
-});
+// });
 
 
 

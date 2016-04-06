@@ -69,4 +69,3 @@ Limit the data stored locall using multiple cursors
 Feel free to send issues, pull requests all is wellcome
 
 Kind regards Morten
-
