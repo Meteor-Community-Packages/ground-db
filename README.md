@@ -65,6 +65,53 @@ Limit the data stored locall using multiple cursors
 *This will empty the in memory and the local storage*
 
 
+## Need a near backwards compatible solution?
+
+This example behaves much like the previous version of ground db regarding caching a `Mongo.Collection` - This class inforces a manual clean up. Calling `removeLocalOnly()` will keep only the documents in the `Mongo.Collection`.
+
+```js
+GroundLegacy = {
+  Collection: class GroundLegacy extends Ground.Collection {
+    constructor(collection, options) {
+      if (!(collection instanceof Mongo.Collection)) {
+        throw new Error('GroundLegacy requires a Mongo.Collection');
+      }
+      if (options.cleanupLocalData !== false) {
+        throw new Error('GroundLegacy requires cleanupLocalData to be false');
+      }
+
+      // Create an instance of ground db
+      super(collection._name);
+
+      this.mongoCollection = collection;
+
+      collection.grounddb = this;
+
+      // Observe on the whole collection
+      this.observeSource(collection.find());
+
+      // Store super
+      collection.orgFind = collection.find;
+      collection.orgFindOne = collection.findOne;
+
+      // Overwrite collection finds using the grounded data
+      collection.find = (...args) => {
+        return this.find(...args);
+      };
+
+      collection.findOne = (...args) => {
+        return this.findOne(...args);
+      };
+    }
+
+    removeLocalOnly() {
+      // Remove all documents not in current subscription
+      this.keep(this.mongoCollection.orgFind());
+    }
+  },
+};
+```
+
 ## Contributions
 Feel free to send issues, pull requests all is wellcome
 
