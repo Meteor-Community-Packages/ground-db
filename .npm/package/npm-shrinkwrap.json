@@ -1,0 +1,23 @@
+{
+  "dependencies": {
+    "localforage": {
+      "version": "1.4.0",
+      "resolved": "https://registry.npmjs.org/localforage/-/localforage-1.4.0.tgz",
+      "from": "localforage@1.4.0",
+      "dependencies": {
+        "promise": {
+          "version": "5.0.0",
+          "resolved": "https://registry.npmjs.org/promise/-/promise-5.0.0.tgz",
+          "from": "promise@>=5.0.0 <6.0.0",
+          "dependencies": {
+            "asap": {
+              "version": "1.0.0",
+              "resolved": "https://registry.npmjs.org/asap/-/asap-1.0.0.tgz",
+              "from": "asap@>=1.0.0 <1.1.0"
+            }
+          }
+        }
+      }
+    }
+  }
+}

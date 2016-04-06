@@ -1,19 +1,22 @@
 Package.describe({
   name: "ground:db",
-  version: "2.0.0-alpha.2",
+  version: "2.0.0-rc.3",
   summary: "Ground Meteor.Collections offline",
   git: "https://github.com/GroundMeteor/db.git"
 });
 
+Npm.depends({
+  localforage: '1.4.0',
+});
+
 Package.onUse(function (api) {
-  api.versionsFrom('METEOR@1.2');
+  api.versionsFrom('METEOR@1.3');
   api.use(['ecmascript', 'mongo-id', 'reactive-var', 'diff-sequence', 'minimongo']);
 
   api.use([
     'underscore',
     'ejson',
-    'ground:servertime@0.0.4-rc.1',
-    'raix:localforage@1.2.4-rc.1',
+    'ground:servertime@2.0.0',
     'raix:eventstate@0.0.2',
   ], ['client', 'server']);
 
@@ -21,11 +24,8 @@ Package.onUse(function (api) {
 
   api.use(['tracker', 'dispatch:kernel@0.0.6'], 'client');
 
-  api.addFiles([
-    'lib/client/pending.jobs.js',
-    'lib/client/ground.db.js',
-    ], 'client');
-  api.addFiles('lib/server/ground.db.js', 'server');
+  api.mainModule('lib/client/ground.db.js', 'client');
+  api.mainModule('lib/server/ground.db.js', 'server');
 });
 
 Package.onTest(function (api) {
