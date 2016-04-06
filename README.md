@@ -1,136 +1,187 @@
-Ground DB
-=========
+ground:db [![Build Status](https://travis-ci.org/GroundMeteor/db.png?branch=Meteor-0-9-1)](https://travis-ci.org/GroundMeteor/db) [![Deps Status](http://checkdeps.meteor.com/badge/GroundMeteor/db/Meteor-0-9-1)](http://checkdeps.meteor.com/GroundMeteor/db) 
+==========
+
 GroundDB is a fast and thin layer providing Meteor offline database and methods - Taking cloud data to the ground.
 
 ```js
   // Return a grounded Meteor.Collection
-  var list = new GroundDB('list');
+  var list = new Ground.Collection('list');
 ```
 
-##Meteor Collection Interface
-GroundDB is like a normal `Meteor.Collection` - but changes and outstanding methods are cached and resumed.
+## Meteor Collection Interface
+GroundDB is like a normal `Meteor.Collection` - but changes and outstanding methods are cached and resumed. *Turn off resume by setting the option `resume: false`*
 
 [Live basic debug test](http://grounddb.meteor.com/)
 
-##Features:
-* Ligth footprint
+[Angular example by quanganh206](https://github.com/quanganh206/anguar-meteor-offline-contacts)
+
+## Features:
+* Light footprint
 * Broad browser support Chrome, Safari, Firefox and Internet Explorer 9
-* Fallback to normal Meteor.Collection if no localstorage
+* Fallback to normal Meteor.Collection if no local storage
 * Resume of changes in collections
 * Resume of methods
 * Works offline updating cross window tabs
 * Support for [SmartCollection](https://github.com/arunoda/meteor-smart-collections)
 * Support for offline client-side only databases
 * Uses `EJSON.minify` and `EJSON.maxify` to compress data in localstorage
-*In the future there will be a customizable conflict handler on the server-side*
+* *In the future there will be a customizable conflict handler on the server-side*
 
-##Creating a GroundDB object (variants)
+## Current development
+Current development is the Meteor 1.2 ES2015 localforage version `ground:db@1.0.0-alpha.x` [branch](https://github.com/GroundMeteor/db/tree/es2015-localforage) is tracked in [#118](https://github.com/GroundMeteor/db/issues/118)
+It supports nearly all types of storage even sqlite on cordova and will have better performance and general resumeability - that said it's also an api breaking version.
+
+## Creating a Ground.Collection object (variants)
 ```js
 
   // Return a grounded Meteor.Collection
-  var list = new GroundDB('list');
+  var list = new Ground.Collection('list');
 
   or
 
   // Get the groundDB of existing Meteor.Collection
   var list = new Meteor.Collection('list');
-  var groundList = new GroundDB(list);
+  var groundList = new Ground.Collection(list);
 
   or
 
   // Ground an existing Meteor.Collection  
   var list = new Meteor.Collection('list');
   // just ground the database:
-  GroundDB(list);
+  Ground.Collection(list);
 ```
 *Example of different patterns. Grounding a `Meteor.Collection` will attach the `cache`, `resume` and `cross tabs update offline`*
 
-##Pure client-side offline databases (variants)
-GroundDB can be applyed on client-side only eg.: `new Meteor.Collection(null);`
+## Pure client-side offline databases (variants)
+Ground.Collection can be applied on client-side only eg.: `new Meteor.Collection(null);`
 ```js
 
   // Creates client-side only database, this one maps on suffix `null`
-  var list = new GroundDB(null);
+  var list = new Ground.Collection(null);
 
-  // Creates client-side only database, this one maps on suffix `list`
-  var list = new GroundDB(null, 'list');
+  // Creates client-side only database, this one maps on suffix `list` *(Meteor 0.6.5+)*
+  var list = new Ground.Collection('list', { connection: null });
   
   or
 
   // Get the groundDB of existing Meteor.Collection
   var list = new Meteor.Collection(null);
-  var groundList = new GroundDB(list, 'list');
+  var groundList = new Ground.Collection(list, 'list');
 
   or
 
   // Ground an existing Meteor.Collection  
   var list = new Meteor.Collection(null);
   // just ground the database and map on suffix `list`
-  GroundDB(list, 'list');
+  Ground.Collection(list, 'list');
 ```
+*You can only have one grounded collection with name null*
 
-##Support
+## Support
 Tested on Chrome, Safari, Firefox and IE9 *(though appcache is not supported in IE9 tabs are updated when offline)* - but all browsers that support localstorage *contains a FF safe test of localstorage*
 
 If localstorage is not supported the groundDB simply work as a normal `Meteor.Collection`
 
-##Concept
+## Concept
 Localstorage is simple and widely supported - but slow - *Thats why we only use it for caching databases and methods + trying to limit the read and writes from it.*
 
-GroundDB saves outstanding methods and minimongo db into localstorage - The number of saves to localstorage is minimized.
+GroundDB saves outstanding methods and minimongo db into localstorage - The number of saves to localstorage is minimized. *Use `Ground.resumeMethods`*
 
 When the app loads GroundDB resumes methods and database changes - made when offline and browser closed.
 
-##Ground user details
+## Ground user details
 It's possible to mount an allready existing collection on a `groundDB` eg.:
 ```js
-  GroundDB(Meteor.users);
+  Ground.Collection(Meteor.users);
 ```
 *The example will keep `Meteor.user()` returning correct user details - even if offline*
 
-##Ground SmartCollections
+## Ground SmartCollections
 It's possible to ground an allready existing `smartCollectin` on a `groundDB` eg.:
 ```js
   var mySmartCollection = new SmartCollection('foo');
-  GroundDB(mySmartCollection);
+  Ground.Collection(mySmartCollection);
+
+or
+
+  var mySmartCollection = Ground.Collection(new SmartCollection('foo'));
 
   // use the smart collection
   mySmartCollection.insert(/* stuff */);
 ```
 
-##Resume of outstanding methods
-Database changes and methods will be sent to the server just like normal. The methods are sent to server after relogin - this way `this.userId` isset when running on the server. In other words: `Just like normal`
+## Resume of outstanding methods
+Database changes and methods will be sent to the server just like normal. The methods are sent to server after relogin - this way `this.userId` is set when running on the server. In other words: `Just like normal`
 
-##Publish and subscription
-###Online
+## Publish and subscription
+### Online
 Subscription behavior when using `GroundDB` - When online it's just like normal `Meteor` so nothing new. If you unsubscribe a collection you can still insert etc. but the data will not be visible on the client.
-###Offline
+### Offline
 When offline the data remains in the local database - since the publish is a server thing. Use the query selector for filtering unwanted data.
 *When reconnected the database will update client subscription and changes will be resumed*
 
-##Events *- client-side*
+## Events *- client-side*
 The event api is as follows:
 ```js
-GroundDB.onQuotaExceeded = function() {};
-GroundDB.onResumeDatabase = function(name) {};
-GroundDB.onResumeMethods = function() {};
-GroundDB.onMethodCall = function(methodCall) {};
-GroundDB.onCacheDatabase = function(name) {};
-GroundDB.onCacheMethods = function() {};
-GroundDB.onTabSync = function(key) {};
+Ground.lookup = function(collectionName) {};
+Ground.methodResume = function(names, connection) {};
+
+Ground.addListener // Listen to general events
+foo.addListener // Add listener specific to the foo collection
+
+// Reactive status of all subscriptions, ready or not:
+Ground.ready();
 ```
 
-##Conflict handling *IN the works - not ready for use yet*
+DEPRECATED API:
+~~Ground.onQuotaExceeded = function() {};~~
+~~Ground.onResumeDatabase = function(name) {};~~
+~~Ground.onResumeMethods = function() {};~~
+~~Ground.onMethodCall = function(methodCall) {};~~
+~~Ground.onCacheDatabase = function(name) {};~~
+~~Ground.onCacheMethods = function() {};~~
+~~Ground.onTabSync = function(key) {};~~
+~~Ground.skipMethods = function(methodsToSkipObject)~~
+
+## Cache methods
+Use the `Ground.methodResume` to cache method calls on a collection. It takes the method name or array of names. The connection is optional if not set the default connection is used:
+```js
+  // This is how grounddb uses this internally
+  Ground.methodResume([
+    '/' + self.name + '/insert',
+    '/' + self.name + '/remove',
+    '/' + self.name + '/update'
+  ], self.connection);
+```
+*The `Ground.skipMethods` is deprecated*
+
+## Conflict handling *IN the works - not ready for use yet*
 The conflict handling api is as follows:
 ```js
-GroundDB.now(); // Returns server timestamp works on both client and server
+Ground.now(); // Returns server timestamp works on both client and server
 ```
 
-##Future
+## Additional api
+Normally Ground Collections are cleaned up for local only data when subscriptions are ready. But sometimes we might want to local the data later eg. if the db is already populated.
+
+```js
+  var groundList = new Ground.Collection('list', {
+    cleanupLocalData: false
+  });
+
+  // Manually triggering a clean up of local only data
+  // parameter query is optional, if passed, only local items that match query will be removed 
+  groundList.removeLocalOnly(query); 
+
+  // Clear local data - This will empty all local data
+  groundList.clear();
+```
+
+## Future
 * At the moment the conflict resolution is pretty basic last change recieved by server wins. This could be greatly improved by adding a proper conflict handler. *For more details look at comment in server.js*
 * Intelligent subscriptions - A way for the groundDB to keep the data most important for the user - and letting less important data go to match quota limit
 
-##Contributions
+## Contributions
 Feel free to send issues, pull requests all is wellcome
 
 Kind regards Morten

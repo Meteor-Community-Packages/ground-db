@@ -1,30 +1,55 @@
 Package.describe({
-  summary: "\u001b[32mv0.0.15\n"+
-  "\u001b[33m-----------------------------------------\n"+
-  "\u001b[0m GroundDB is a thin layer providing       \n"+
-  "\u001b[0m Meteor offline database and methods      \n"+
-  "\u001b[33m-------------------------------------RaiX\n"
+  name: "ground:db",
+  version: "0.3.15",
+  summary: "Ground Meteor.Collections offline",
+  git: "https://github.com/GroundMeteor/db.git"
 });
 
-Package.on_use(function (api) {
-  "use strict";
+Package.onUse(function (api) {
+  api.versionsFrom('1.2');
+
+  api.use([
+    'meteor',
+    'underscore',
+    'minimongo',
+    'ejson',
+    'ground:util@0.1.17',
+    'ground:servertime@0.0.3',
+    //'ground:minimax@1.1.3', // Its implied by ground:util
+    'ground:localstorage@0.1.9',
+    'raix:eventemitter@0.1.3',
+    'raix:stubfence@1.0.3',
+    'raix:onetimeout@1.0.4'
+  ], ['client', 'server']);
+
+  // Make sure any storage adapters are loaded first
+  // api.use([
+  //   'ground:localstorage'
+  // ], 'client', { weak: true });
+
+  api.export('Ground');
   api.export('GroundDB');
-  api.export('_gDB', ['client', 'server'], {testOnly: true});
-  api.use(['meteor', 'underscore', 'deps', 'random', 'minimongo', 'ejson', 'ejson-minimax'],
-          ['client', 'server']);
-  api.use(['deps'], 'client');
+
+  api.use(['tracker', 'dispatch:kernel@0.0.6'], 'client');
+
+
   //api.use([], 'server');
   //api.use(['localstorage', 'ejson'], 'client');
-  api.add_files('groundDB.client.js', 'client');
-  api.add_files('groundDB.server.js', 'server');
+  api.addFiles([
+    'groundDB.client.js',
+    'wrap.collection.js',
+    'wrap.eventemitter.js',
+    'wrap.proto.eventemitter.js',
+    ], 'client');
+  api.addFiles('groundDB.server.js', 'server');
 });
 
-Package.on_test(function (api) {
-  api.use('groundDB', ['client']);
+Package.onTest(function (api) {
+  api.use('ground:db', ['client']);
   api.use('test-helpers', 'client');
   api.use(['tinytest', 'underscore', 'ejson', 'ordered-dict',
-           'random', 'deps']);
+           'random', 'tracker']);
 
-  api.add_files('groundDB.client.tests.js', 'client');
-  api.add_files('groundDB.server.tests.js', 'server');
+  api.addFiles('groundDB.client.tests.js', 'client');
+  api.addFiles('groundDB.server.tests.js', 'server');
 });

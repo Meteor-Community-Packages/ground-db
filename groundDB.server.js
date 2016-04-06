@@ -1,3 +1,4 @@
+/* global _groundDbConstructor:true */
 /*
 
 
@@ -7,94 +8,91 @@ TODO:
 */
 ///////////////////////////////// TEST SCOPE ///////////////////////////////////
 
-Meteor.server = Meteor.server || Meteor.default_server;
+Meteor.server = Meteor.server || Meteor.default_server; // jshint ignore:line
 
 //////////////////////////////// GROUND DATABASE ///////////////////////////////
 
-// @export GroundDB
-GroundDB = function(name, options) {
-  // Inheritance Meteor Collection can be set by options.collection
-  // Accepts smart collections by Arunoda Susiripala
+_groundDbConstructor = function(collection, options) { // jshint ignore:line
   var self;
-  // If name is string or null then assume a normal Meteor.Collection
-  if (name === ''+name || name === null || typeof name === 'undefined') {
-    // We instanciate a new meteor collection, let it handle undefined
-    self = new Meteor.Collection(name, options);
-  } else {
-    // User set a collection in options
-    if (name instanceof Meteor.Collection) {
-      self = name;
-    } else {
-      if (typeof Meteor.SmartCollection !== 'undefined' &&
-              name instanceof Meteor.SmartCollection) {
-        // We are in a smart collection
-        self = name._collection;
-      } else {
-        // self not set, throw an error
-        throw new Error('GroundDB got an invalid name or collection');
-      }
-    }
-  }
+  // XXX: Write the grounddb constructor
 
-  // Initialize collection name
-  self.name = (self.name)? self.name : self._name;
 
-  // This is the basic interface allowing users easily access for handling
-  // method calls, this.super() is the super and this.collection is self
-  // TODO: Remove this section to the README
-  self.conflictHandlers = (options && options.conflictHandlers)?
-        options.conflictHandlers: {
-    'insert': function(doc) {
-      console.log('insert');
-      console.log(doc);
-      this.super(doc);
-    },
-    'update': function(id, modifier) {
-      console.log('update');
-      console.log(id);
-      console.log(modifier);
-      this.super(id, modifier);
-    },
-    'remove': function(id) {
-      console.log('remove');
-      console.log(id);
-      this.super(id);
-    }
-  };
+  // // This is the basic interface allowing users easily access for handling
+  // // method calls, this.super() is the super and this.collection is self
+  // // TODO: Remove this section to the README
+  // self.conflictHandlers = (options && options.conflictHandlers)?
+  //       options.conflictHandlers: {
+  //   'insert': function(doc) {
+  //     //console.log('insert');
+  //     //console.log(doc);
+  //     this.super(doc);
+  //   },
+  //   'update': function(id, modifier) {
+  //     //console.log('update');
+  //     //console.log(id);
+  //     //console.log(modifier);
+  //     this.super(id, modifier);
+  //   },
+  //   'remove': function(id) {
+  //     //console.log('remove');
+  //     //console.log(id);
+  //     this.super(id);
+  //   }
+  // };
 
-  // Create overwrite interface
-  _.each(['insert', 'update', 'remove'], function(name) {
-    // TODO: init default conflict handlers
-    //self.conflictHandlers[name] = function() {
-    //  this.super.apply(this, arguments);
-    //};
+  // // Create overwrite interface
+  // _.each(['insert', 'update', 'remove'], function(name) {
+  //   // TODO: init default conflict handlers
+  //   //self.conflictHandlers[name] = function() {
+  //   //  this.super.apply(this, arguments);
+  //   //};
 
-    // Save super
-    var _super = Meteor.default_server.method_handlers['/'+self.name+'/'+name];
-    // Overwrite
-    Meteor.default_server.method_handlers['/'+self.name+'/'+name] = function() {
-      var _this = this;
-      _this.collection = self;
-      _this.super = _super;
-      // Call the conflicthandlers
-      self.conflictHandlers[name].apply(_this, arguments);
-    };
-  });
+  //   // Save super
+  //   var _super = Meteor.default_server.method_handlers['/'+self.name+'/'+name];
+  //   // Overwrite
+  //   Meteor.default_server.method_handlers['/'+self.name+'/'+name] = function() {
+  //     var _this = this;
+  //     _this.collection = self;
+  //     _this.super = _super;
+  //     // Call the conflicthandlers
+  //     self.conflictHandlers[name].apply(_this, arguments);
+  //   };
+  // });
 
   return self;
 };
 
-////////////////////////// GET SERVER TIME DIFFERENCE //////////////////////////
 
-Meteor.methods({
-  'getServerTime': function() {
-    return Date.now();
+// Global helper for applying grounddb on a collection
+Ground.Collection = function(name, options) {
+  var self;
+  // Inheritance Meteor Collection can be set by options.collection
+  // Accepts smart collections by Arunoda Susiripala
+  // Check if user used the "new" keyword
+
+
+  // Make sure we got some options
+  options = options || {};
+
+  // Either name is a Meteor collection or we create a new Meteor collection
+  if (name instanceof _groundUtil.Collection) {
+    self = name;
+  } else {
+    self = new _groundUtil.Collection(name, options);
   }
-});
 
-// Unify client / server api
-GroundDB.now = function() {
-  return Date.now();
+  // Throw an error if something went wrong
+  if (!(self instanceof _groundUtil.Collection)) {
+    throw new Error('Ground.Collection expected a Mongo.Collection');
+  }
+
+  // Add grounddb to the collection, circular reference since self is
+  // grounddb.collection
+  self.grounddb = new _groundDbConstructor(self, options);
+
+  // Return grounded collection - We dont return this eg if it was an instance
+  // of Ground.Collection
+  return self;
 };
 
 ////////////////////////// TIMESTAMP CONFLICTHANDLER ///////////////////////////
