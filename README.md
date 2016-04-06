@@ -12,7 +12,7 @@ This version of GroundDB is a caching only storage - meaning it does not support
 
 *It's using localforage with some minor modifications - hopefully we can use localForage via npm in the future*
 
-[Notes about migration to II](https://github.com/GroundMeteor/db/issues/153#issuecomment-206125703)
+[Notes about migration to GroundDB II](https://github.com/GroundMeteor/db/issues/153#issuecomment-206125703)
 
 ## Usage
 
