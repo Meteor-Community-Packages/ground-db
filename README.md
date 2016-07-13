@@ -112,6 +112,11 @@ GroundLegacy = {
 };
 ```
 
+## More
+
+Read about:
+* [Events](EVENTS.md) in Ground DB
+
 ## Contributions
 Feel free to send issues, pull requests all is wellcome
 
