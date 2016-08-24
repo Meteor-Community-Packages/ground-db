@@ -16,7 +16,7 @@ Package.onUse(function (api) {
   api.use([
     'underscore',
     'ejson',
-    'ground:servertime@2.0.0',
+    // 'ground:servertime@2.0.0', // now embedded due to #176
     'raix:eventstate@0.0.2',
   ], ['client', 'server']);
 
