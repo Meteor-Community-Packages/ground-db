@@ -1,4 +1,5 @@
 {
+	"esversion": 6,
 	"maxerr": 50,
 	"bitwise": true,
 	"camelcase": true,
@@ -71,7 +72,6 @@
 		"Deps",
 		"DomUtils",
 		"EJSON",
-		"EventEmitter",
 		"Ground",
 		"GroundDB",
 		"Kernel",
@@ -90,21 +90,7 @@
 		"Tinytest",
 		"Tracker",
 		"_",
-		"_groundUtil",
-		"blurElement",
-		"canonicalizeHtml",
-		"clickElement",
-		"clickIt",
-		"focusElement",
-		"getStyleProperty",
-		"makeTestConnection",
-		"pollUntil",
-		"renderToDiv",
-		"simplePoll",
-		"simulateEvent",
-		"testAsyncMulti",
-		"try_all_permutations",
-		"withCallbackLogger"
+		"ReactiveVar"
 	],
 	"globals": {
 		"Ground": true,

@@ -1,0 +1,36 @@
+{
+  "name": "db",
+  "version": "0.0.0-semantic-release",
+  "description": "Ground Meteor.Collections offline",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Tests not implemented\" && exit 0",
+    "semantic-release": "semantic-release"
+  },
+  "release": {
+    "verifyConditions": [
+      "semantic-release-meteor",
+      "@semantic-release/github"
+    ],
+    "getLastRelease": "semantic-release-meteor",
+    "publish": [
+      "semantic-release-meteor",
+      "@semantic-release/github"
+    ]
+  },
+  "repository": "https://github.com/GroundMeteor/db.git",
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/GroundMeteor/db/issues"
+  },
+  "homepage": "https://github.com/GroundMeteor/db#readme",
+  "devDependencies": {
+    "meteor-ci": "0.3.1",
+    "semantic-release": "^10.0.1",
+    "semantic-release-meteor": "^0.0.7"
+  }
+}
