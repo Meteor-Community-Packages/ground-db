@@ -14,7 +14,6 @@ Package.onUse(function (api) {
   api.use(['ecmascript', 'mongo-id', 'reactive-var', 'diff-sequence', 'minimongo']);
 
   api.use([
-    'underscore',
     'ejson',
     // 'ground:servertime@2.0.0', // now embedded due to #176
     'raix:eventstate@0.0.5',
