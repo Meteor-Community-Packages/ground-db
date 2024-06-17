@@ -6,17 +6,15 @@ Package.describe({
 });
 
 Npm.depends({
-  localforage: '1.4.0',
+  localforage: '1.9.0',
 });
 
 Package.onUse(function (api) {
-  api.versionsFrom('METEOR@1.3');
+  api.versionsFrom(['3.0-rc.4']);
   api.use(['ecmascript', 'mongo-id', 'reactive-var', 'diff-sequence', 'minimongo']);
 
   api.use([
-    'underscore',
     'ejson',
-    'raix:eventstate@0.0.2',
   ], ['client', 'server']);
 
   api.export('Ground');
