@@ -6,7 +6,7 @@ Package.describe({
 });
 
 Npm.depends({
-  localforage: '1.7.3',
+  localforage: '1.9.0',
 });
 
 Package.onUse(function (api) {
@@ -15,8 +15,6 @@ Package.onUse(function (api) {
 
   api.use([
     'ejson',
-    // 'ground:servertime@2.0.0', // now embedded due to #176
-    'raix:eventstate@0.0.5',
   ], ['client', 'server']);
 
   api.export('Ground');
