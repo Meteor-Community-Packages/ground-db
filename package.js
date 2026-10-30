@@ -10,7 +10,7 @@ Npm.depends({
 });
 
 Package.onUse(function (api) {
-  api.versionsFrom(['1.3', '2.3']);
+  api.versionsFrom(['3.0-rc.4']);
   api.use(['ecmascript', 'mongo-id', 'reactive-var', 'diff-sequence', 'minimongo']);
 
   api.use([
